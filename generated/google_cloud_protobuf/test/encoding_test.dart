@@ -50,7 +50,7 @@ void main() {
   group('bytes', () {
     test('decode', () {
       final bytes = decodeBytes('AQID')!;
-      expect(stringify(bytes), '1,2,3');
+      expect(bytes, Uint8List.fromList([1, 2, 3]));
     });
 
     test('encode', () {
@@ -184,43 +184,54 @@ void main() {
     });
   });
 
-  group('list', () {
-    test('decode enum', () {
-      expect(decodeListEnum(encodeList([TestEnum.one]), TestEnum.fromJson), [
-        TestEnum.one,
+  group('list of bytes', () {
+    test('decode', () {
+      final actual = decodeListBytes(['AQID', '']);
+
+      expect(actual, [
+        Uint8List.fromList([1, 2, 3]),
+        Uint8List.fromList([]),
       ]);
     });
 
-    test('encode enum', () {
-      expect(encodeList([TestEnum.one]), ['ONE']);
-    });
-
-    test('decode bytes', () {
-      final actual = decodeListBytes(
-        encodeListBytes([
-          Uint8List.fromList([1]),
-          Uint8List.fromList([1, 2]),
-          Uint8List.fromList([1, 2, 3]),
-        ]),
-      );
-
-      expect(actual, hasLength(3));
-
-      expect(stringify(actual![0]), '1');
-      expect(stringify(actual[1]), '1,2');
-      expect(stringify(actual[2]), '1,2,3');
-    });
-
-    test('encode bytes', () {
+    test('encode', () {
       expect(
         encodeListBytes([
           Uint8List.fromList([1, 2, 3]),
+          Uint8List.fromList([]),
         ]),
-        ['AQID'],
+        ['AQID', ''],
       );
     });
 
-    test('decode double', () {
+    test('decode null', () {
+      expect(decodeListBytes(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeListBytes(null), isNull);
+    });
+  });
+
+  group('list of enum', () {
+    test('decode', () {
+      expect(decodeListEnum(['ONE', 'TWO'], TestEnum.fromJson), [
+        TestEnum.one,
+        TestEnum.two,
+      ]);
+    });
+
+    test('encode', () {
+      expect(encodeList([TestEnum.one]), ['ONE']);
+    });
+
+    test('decode null', () {
+      expect(decodeListEnum(null, TestEnum.fromJson), isNull);
+    });
+  });
+
+  group('list of double', () {
+    test('decode', () {
       final actual = decodeListDouble(['NaN', 'Infinity', '-Infinity', 1.0, 1]);
 
       expect(actual, [
@@ -229,39 +240,55 @@ void main() {
       ]);
     });
 
-    test('decode message', () {
-      final actual = decodeListMessage(
-        encodeList([TestMessage(message: 'Hello World')]),
-        TestMessage.fromJson,
-      );
-      expect(actual!, hasLength(1));
+    test('encode', () {
       expect(
-        actual[0],
-        isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
+        encodeListDouble([
+          double.nan,
+          double.infinity,
+          double.negativeInfinity,
+          1.0,
+          1,
+        ]),
+        ['NaN', 'Infinity', '-Infinity', 1.0, 1],
       );
     });
 
-    test('encode message', () {
+    test('decode null', () {
+      expect(decodeListDouble(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeListDouble(null), isNull);
+    });
+  });
+
+  group('list of message', () {
+    test('decode', () {
+      final actual = decodeListMessage([
+        {'message': 'Hello World'},
+      ], TestMessage.fromJson);
+      expect(actual, [
+        isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
+      ]);
+    });
+
+    test('encode', () {
       expect(encodeList([TestMessage(message: 'Hello World')]), [
         {'message': 'Hello World'},
       ]);
     });
 
     test('decode null', () {
-      expect(decodeListDouble(null), isNull);
-      expect(decodeListEnum(null, TestEnum.fromJson), isNull);
       expect(decodeListMessage(null, TestMessage.fromJson), isNull);
-      expect(decodeListBytes(null), isNull);
     });
 
     test('encode null', () {
       expect(encodeList(null), isNull);
-      expect(encodeListBytes(null), isNull);
     });
   });
 
-  group('map', () {
-    test('decode enum', () {
+  group('map of enum', () {
+    test('decode', () {
       final actual = decodeMapEnum<String, TestEnum>(
         encodeMap({
           'one': TestEnum.one,
@@ -271,29 +298,41 @@ void main() {
         TestEnum.fromJson,
       );
 
-      expect(actual, isMap);
-      expect(actual, hasLength(3));
-      expect(actual, containsPair('one', TestEnum.one));
-      expect(actual, containsPair('two', TestEnum.two));
-      expect(actual, containsPair('three', TestEnum.one));
+      expect(actual, {
+        'one': TestEnum.one,
+        'two': TestEnum.two,
+        'three': TestEnum.one,
+      });
     });
 
-    test('encode enum', () {
+    test('encode', () {
       expect(encodeMap({'one': TestEnum.one}), {'one': 'ONE'});
     });
 
-    test('decode bytes', () {
+    test('decode null', () {
+      expect(decodeMapEnum<String, TestEnum>(null, TestEnum.fromJson), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeMap<String>(null), isNull);
+    });
+  });
+
+  group('map of bytes', () {
+    test('decode', () {
       final actual = decodeMapBytes<int>(
         encodeMapBytes({
           1: Uint8List.fromList([1, 2]),
           2: Uint8List.fromList([1, 2, 3, 4]),
         }),
       );
-      expect(actual, isMap);
-      expect(stringify(actual![1]!), '1,2');
+      expect(actual, {
+        1: Uint8List.fromList([1, 2]),
+        2: Uint8List.fromList([1, 2, 3, 4]),
+      });
     });
 
-    test('encode bytes', () {
+    test('encode', () {
       expect(
         encodeMapBytes({
           1: Uint8List.fromList([1, 2, 3]),
@@ -302,7 +341,17 @@ void main() {
       );
     });
 
-    test('decode message', () {
+    test('decode null', () {
+      expect(decodeMapBytes<int>(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeMapBytes<int>(null), isNull);
+    });
+  });
+
+  group('map of message', () {
+    test('decode', () {
       final actual = decodeMapMessage<String, TestMessage>(
         encodeMap({
           'one': TestMessage(message: 'Hello'),
@@ -328,15 +377,13 @@ void main() {
       );
     });
 
-    test('encode message', () {
+    test('encode', () {
       expect(encodeMap({'one': TestMessage(message: 'Hello')}), {
         'one': {'message': 'Hello'},
       });
     });
 
     test('decode null', () {
-      expect(decodeMapEnum<String, TestEnum>(null, TestEnum.fromJson), isNull);
-      expect(decodeMapBytes<int>(null), isNull);
       expect(
         decodeMapMessage<String, TestMessage>(null, TestMessage.fromJson),
         isNull,
@@ -345,9 +392,6 @@ void main() {
 
     test('encode null', () {
       expect(encodeMap<String>(null), isNull);
-      expect(encodeMapBytes<int>(null), isNull);
     });
   });
 }
-
-String stringify(Uint8List list) => list.map((i) => '$i').join(',');

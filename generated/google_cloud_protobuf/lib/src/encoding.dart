@@ -151,6 +151,9 @@ List<Object?>? encodeList(List<JsonEncodable>? value) =>
 List<Object?>? encodeListBytes(List<Uint8List>? value) =>
     value?.map(base64Encode).toList();
 
+List<Object?>? encodeListDouble(List<double>? value) =>
+    value?.map(encodeDouble).toList();
+
 /// Encode a map of [JsonEncodable] values into JSON.
 Map<T, Object?>? encodeMap<T>(Map<T, JsonEncodable>? value) =>
     value?.map((key, value) => MapEntry(key, value.toJson()));
