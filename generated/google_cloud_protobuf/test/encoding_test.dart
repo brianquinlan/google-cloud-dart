@@ -350,6 +350,46 @@ void main() {
     });
   });
 
+  group('map of double', () {
+    test('decode', () {
+      final actual = decodeMapDouble<String>({
+        'nan': 'NaN',
+        'inf': 'Infinity',
+        'negInf': '-Infinity',
+        'one': 1.0,
+        'int': 1,
+      });
+
+      expect(actual, {
+        'nan': isNaN,
+        'inf': double.infinity,
+        'negInf': double.negativeInfinity,
+        'one': 1.0,
+        'int': 1.0,
+      });
+    });
+
+    test('encode', () {
+      expect(
+        encodeMapDouble({
+          'nan': double.nan,
+          'inf': double.infinity,
+          'negInf': double.negativeInfinity,
+          'one': 1.0,
+        }),
+        {'nan': 'NaN', 'inf': 'Infinity', 'negInf': '-Infinity', 'one': 1.0},
+      );
+    });
+
+    test('decode null', () {
+      expect(decodeMapDouble<String>(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeMapDouble<String>(null), isNull);
+    });
+  });
+
   group('map of message', () {
     test('decode', () {
       final actual = decodeMapMessage<String, TestMessage>(

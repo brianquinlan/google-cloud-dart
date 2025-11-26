@@ -111,6 +111,11 @@ Map<K, Uint8List>? decodeMapBytes<K>(Object? value) => (value as Map?)
     ?.map((key, value) => MapEntry(key, base64Decode(value as String)))
     .cast();
 
+/// Decode a map of `double`.
+Map<K, double>? decodeMapDouble<K>(Object? value) => (value as Map?)
+    ?.map((key, value) => MapEntry(key, decodeDouble(value)!))
+    .cast();
+
 /// Decode a map of [ProtoMessage]s.
 Map<K, V>? decodeMapMessage<K, V extends ProtoMessage>(
   Object? value,
@@ -161,6 +166,10 @@ Map<T, Object?>? encodeMap<T>(Map<T, JsonEncodable>? value) =>
 /// Encode a list of `bytes` values into JSON.
 Map<T, String>? encodeMapBytes<T>(Map<T, Uint8List>? value) =>
     value?.map((key, value) => MapEntry(key, base64Encode(value)));
+
+/// Encode a map of `double` values into JSON.
+Map<T, Object?>? encodeMapDouble<T>(Map<T, double>? value) =>
+    value?.map((key, value) => MapEntry(key, encodeDouble(value)));
 
 /// Extensions methods used for comparing to proto default values.
 extension BoolProtoDefault on bool {
