@@ -47,147 +47,28 @@ final class TestMessage extends ProtoMessage {
 }
 
 void main() {
-  test('int64', () {
-    expect(encodeInt64(decodeInt64('1')), '1');
-    expect(encodeInt64(decodeInt64(1)), '1');
-  });
-
-  test('double', () {
-    expect(decodeDouble(1), 1);
-    expect(decodeDouble(1.1), 1.1);
-    expect(decodeDouble(encodeDouble(1)), 1);
-    expect(decodeDouble(encodeDouble(1.1)), 1.1);
-  });
-
-  test('double NaN', () {
-    expect(decodeDouble('NaN'), isNaN);
-    expect(decodeDouble('Infinity'), double.infinity);
-    expect(decodeDouble('-Infinity'), double.negativeInfinity);
-
-    // don't allow arbitrary strings for doubles
-    expect(() => decodeDouble('1.0'), throwsFormatException);
-
-    expect(encodeDouble(double.nan), 'NaN');
-    expect(encodeDouble(double.infinity), 'Infinity');
-    expect(encodeDouble(double.negativeInfinity), '-Infinity');
-  });
-
-  test('enum', () {
-    final actual = decodeEnum(
-      const TestEnum('ONE').toJson(),
-      TestEnum.fromJson,
-    );
-    expect(actual, TestEnum.one);
-  });
-
-  test('message', () {
-    final actual = decode(
-      TestMessage(message: 'Hello World').toJson() as Map<String, Object?>,
-      TestMessage.fromJson,
-    );
-    expect(
-      actual,
-      isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
-    );
-  });
-
-  test('list of enums', () {
-    expect(decodeListEnum(encodeList([TestEnum.one]), TestEnum.fromJson), [
-      TestEnum.one,
-    ]);
-  });
-
-  test('list of bytes', () {
-    final actual = decodeListBytes(
-      encodeListBytes([
-        Uint8List.fromList([1]),
-        Uint8List.fromList([1, 2]),
-        Uint8List.fromList([1, 2, 3]),
-      ]),
-    );
-
-    expect(actual, hasLength(3));
-
-    expect(stringify(actual![0]), '1');
-    expect(stringify(actual[1]), '1,2');
-    expect(stringify(actual[2]), '1,2,3');
-  });
-
-  test('list of messages', () {
-    final actual = decodeListMessage(
-      encodeList([TestMessage(message: 'Hello World')]),
-      TestMessage.fromJson,
-    );
-    expect(actual!, hasLength(1));
-    expect(
-      actual[0],
-      isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
-    );
-  });
-
-  test('map of enums', () {
-    final actual = decodeMapEnum<String, TestEnum>(
-      encodeMap({
-        'one': TestEnum.one,
-        'two': TestEnum.two,
-        'three': TestEnum.one,
-      }),
-      TestEnum.fromJson,
-    );
-
-    expect(actual, isMap);
-    expect(actual, hasLength(3));
-    expect(actual, containsPair('one', TestEnum.one));
-    expect(actual, containsPair('two', TestEnum.two));
-    expect(actual, containsPair('three', TestEnum.one));
-  });
-
-  test('map of bytes', () {
-    final actual = decodeMapBytes<int>(
-      encodeMapBytes({
-        1: Uint8List.fromList([1, 2]),
-        2: Uint8List.fromList([1, 2, 3, 4]),
-      }),
-    );
-    expect(actual, isMap);
-    expect(stringify(actual![1]!), '1,2');
-  });
-
-  test('map of messages', () {
-    final actual = decodeMapMessage<String, TestMessage>(
-      encodeMap({
-        'one': TestMessage(message: 'Hello'),
-        'two': TestMessage(message: 'World'),
-      }),
-      TestMessage.fromJson,
-    );
-    expect(actual, isMap);
-    expect(actual, hasLength(2));
-    expect(
-      actual,
-      containsPair(
-        'one',
-        isA<TestMessage>().having((o) => o.message, 'message', 'Hello'),
-      ),
-    );
-    expect(
-      actual,
-      containsPair(
-        'two',
-        isA<TestMessage>().having((o) => o.message, 'message', 'World'),
-      ),
-    );
-  });
-
   group('bytes', () {
+    test('decode', () {
+      final bytes = decodeBytes('AQID')!;
+      expect(stringify(bytes), '1,2,3');
+    });
+
+    test('encode', () {
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      expect(encodeBytes(bytes), 'AQID');
+    });
+
+    test('decode null', () {
+      expect(decodeBytes(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeBytes(null), isNull);
+    });
+
     test('encode empty', () {
       final bytes = Uint8List.fromList([]);
       expect(encodeBytes(bytes), '');
-    });
-
-    test('encode simple', () {
-      final bytes = Uint8List.fromList([1, 2, 3]);
-      expect(encodeBytes(bytes), 'AQID');
     });
 
     test('decode empty', () {
@@ -203,10 +84,268 @@ void main() {
       expect(actual, '108,111,114,101,109,32,105,112,115,117,109');
     });
 
-    test('decode simple', () {
+    test('decode complex', () {
       final bytes = decodeBytes('YWJjMTIzIT8kKiYoKSctPUB+')!;
       final actual = bytes.map((item) => '$item').join(',');
       expect(actual, '97,98,99,49,50,51,33,63,36,42,38,40,41,39,45,61,64,126');
+    });
+  });
+
+  group('double', () {
+    test('decode', () {
+      expect(decodeDouble(1), 1);
+      expect(decodeDouble(1.1), 1.1);
+    });
+
+    test('encode', () {
+      expect(encodeDouble(1), 1);
+      expect(encodeDouble(1.1), 1.1);
+    });
+
+    test('decode null', () {
+      expect(decodeDouble(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeDouble(null), isNull);
+    });
+
+    test('decode special strings', () {
+      expect(decodeDouble('NaN'), isNaN);
+      expect(decodeDouble('Infinity'), double.infinity);
+      expect(decodeDouble('-Infinity'), double.negativeInfinity);
+    });
+
+    test('encode special strings', () {
+      expect(encodeDouble(double.nan), 'NaN');
+      expect(encodeDouble(double.infinity), 'Infinity');
+      expect(encodeDouble(double.negativeInfinity), '-Infinity');
+    });
+
+    test('decode invalid strings', () {
+      expect(() => decodeDouble('1.0'), throwsFormatException);
+    });
+  });
+
+  group('int64', () {
+    test('decode', () {
+      expect(decodeInt64('1'), 1);
+      expect(decodeInt64(1), 1);
+    });
+
+    test('encode', () {
+      expect(encodeInt64(1), '1');
+    });
+
+    test('decode null', () {
+      expect(decodeInt64(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeInt64(null), isNull);
+    });
+  });
+
+  group('enum', () {
+    test('decode', () {
+      final actual = decodeEnum(
+        const TestEnum('ONE').toJson(),
+        TestEnum.fromJson,
+      );
+      expect(actual, TestEnum.one);
+    });
+
+    test('encode', () {
+      expect(TestEnum.one.toJson(), 'ONE');
+    });
+
+    test('decode null', () {
+      expect(decodeEnum(null, TestEnum.fromJson), isNull);
+    });
+  });
+
+  group('message', () {
+    test('decode', () {
+      final actual = decode({'message': 'Hello World'}, TestMessage.fromJson);
+      expect(
+        actual,
+        isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
+      );
+    });
+
+    test('encode', () {
+      expect(TestMessage(message: 'Hello World').toJson(), {
+        'message': 'Hello World',
+      });
+    });
+
+    test('decode null', () {
+      expect(decode(null, TestMessage.fromJson), isNull);
+    });
+  });
+
+  group('list', () {
+    test('decode enum', () {
+      expect(decodeListEnum(encodeList([TestEnum.one]), TestEnum.fromJson), [
+        TestEnum.one,
+      ]);
+    });
+
+    test('encode enum', () {
+      expect(encodeList([TestEnum.one]), ['ONE']);
+    });
+
+    test('decode bytes', () {
+      final actual = decodeListBytes(
+        encodeListBytes([
+          Uint8List.fromList([1]),
+          Uint8List.fromList([1, 2]),
+          Uint8List.fromList([1, 2, 3]),
+        ]),
+      );
+
+      expect(actual, hasLength(3));
+
+      expect(stringify(actual![0]), '1');
+      expect(stringify(actual[1]), '1,2');
+      expect(stringify(actual[2]), '1,2,3');
+    });
+
+    test('encode bytes', () {
+      expect(
+        encodeListBytes([
+          Uint8List.fromList([1, 2, 3]),
+        ]),
+        ['AQID'],
+      );
+    });
+
+    test('decode double', () {
+      final actual = decodeListDouble(['NaN', 'Infinity', '-Infinity', 1.0, 1]);
+
+      expect(actual, [
+        isNaN,
+        ...<double>[double.infinity, double.negativeInfinity, 1.0, 1],
+      ]);
+    });
+
+    test('decode message', () {
+      final actual = decodeListMessage(
+        encodeList([TestMessage(message: 'Hello World')]),
+        TestMessage.fromJson,
+      );
+      expect(actual!, hasLength(1));
+      expect(
+        actual[0],
+        isA<TestMessage>().having((o) => o.message, 'message', 'Hello World'),
+      );
+    });
+
+    test('encode message', () {
+      expect(encodeList([TestMessage(message: 'Hello World')]), [
+        {'message': 'Hello World'},
+      ]);
+    });
+
+    test('decode null', () {
+      expect(decodeListDouble(null), isNull);
+      expect(decodeListEnum(null, TestEnum.fromJson), isNull);
+      expect(decodeListMessage(null, TestMessage.fromJson), isNull);
+      expect(decodeListBytes(null), isNull);
+    });
+
+    test('encode null', () {
+      expect(encodeList(null), isNull);
+      expect(encodeListBytes(null), isNull);
+    });
+  });
+
+  group('map', () {
+    test('decode enum', () {
+      final actual = decodeMapEnum<String, TestEnum>(
+        encodeMap({
+          'one': TestEnum.one,
+          'two': TestEnum.two,
+          'three': TestEnum.one,
+        }),
+        TestEnum.fromJson,
+      );
+
+      expect(actual, isMap);
+      expect(actual, hasLength(3));
+      expect(actual, containsPair('one', TestEnum.one));
+      expect(actual, containsPair('two', TestEnum.two));
+      expect(actual, containsPair('three', TestEnum.one));
+    });
+
+    test('encode enum', () {
+      expect(encodeMap({'one': TestEnum.one}), {'one': 'ONE'});
+    });
+
+    test('decode bytes', () {
+      final actual = decodeMapBytes<int>(
+        encodeMapBytes({
+          1: Uint8List.fromList([1, 2]),
+          2: Uint8List.fromList([1, 2, 3, 4]),
+        }),
+      );
+      expect(actual, isMap);
+      expect(stringify(actual![1]!), '1,2');
+    });
+
+    test('encode bytes', () {
+      expect(
+        encodeMapBytes({
+          1: Uint8List.fromList([1, 2, 3]),
+        }),
+        {1: 'AQID'},
+      );
+    });
+
+    test('decode message', () {
+      final actual = decodeMapMessage<String, TestMessage>(
+        encodeMap({
+          'one': TestMessage(message: 'Hello'),
+          'two': TestMessage(message: 'World'),
+        }),
+        TestMessage.fromJson,
+      );
+      expect(actual, isMap);
+      expect(actual, hasLength(2));
+      expect(
+        actual,
+        containsPair(
+          'one',
+          isA<TestMessage>().having((o) => o.message, 'message', 'Hello'),
+        ),
+      );
+      expect(
+        actual,
+        containsPair(
+          'two',
+          isA<TestMessage>().having((o) => o.message, 'message', 'World'),
+        ),
+      );
+    });
+
+    test('encode message', () {
+      expect(encodeMap({'one': TestMessage(message: 'Hello')}), {
+        'one': {'message': 'Hello'},
+      });
+    });
+
+    test('decode null', () {
+      expect(decodeMapEnum<String, TestEnum>(null, TestEnum.fromJson), isNull);
+      expect(decodeMapBytes<int>(null), isNull);
+      expect(
+        decodeMapMessage<String, TestMessage>(null, TestMessage.fromJson),
+        isNull,
+      );
+    });
+
+    test('encode null', () {
+      expect(encodeMap<String>(null), isNull);
+      expect(encodeMapBytes<int>(null), isNull);
     });
   });
 }

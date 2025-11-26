@@ -77,6 +77,9 @@ List<T>? decodeListEnum<T extends ProtoEnum>(
   T Function(String) decoder,
 ) => (value as List?)?.map((item) => decoder(item as String)).toList();
 
+List<double>? decodeListDouble(Object? value) =>
+    (value as List?)?.map((item) => decodeDouble(item)!).toList();
+
 /// Decode a list of [ProtoMessage]s.
 List<T>? decodeListMessage<T extends ProtoMessage>(
   Object? value,
