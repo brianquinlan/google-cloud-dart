@@ -18,6 +18,9 @@ specification-format = 'protobuf'
 
 [source]
 roots                   = 'googleapis'
+discovery-extracted-name = 'discovery-artifact-manager-62e9774536ca8aea98df47a15477bf9ba3ed02e0'
+discovery-root           = 'https://github.com/googleapis/discovery-artifact-manager/archive/62e9774536ca8aea98df47a15477bf9ba3ed02e0.tar.gz'
+discovery-sha256         = '04bd7d4948fe8331e5efaf2cc64ce06c32c497cd5bf9080ff778ac7b0ec4ead1'
 googleapis-root         = 'https://github.com/googleapis/googleapis/archive/fef700942b6a3ef8bbaf253306a0a652a1858552.tar.gz'
 googleapis-sha256       = 'df47fc8368ce3e02f12e857dbb73d0631c35a5860527629cc37214e307a726f3'
 protobuf-extracted-name = 'protobuf-29.3'
