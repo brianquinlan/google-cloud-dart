@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
 import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
+import 'dart:ffi' as ffi;
+import 'package:ffi/ffi.dart';
 import '../google_cloud_storage.dart';
-import 'bucket.dart' as bucket;
 import 'retry.dart';
+import 'shim.dart' as shim;
 
 // https://github.com/googleapis/googleapis/blob/211d22fa6dfabfa52cbda04d1aee852a01301edf/google/storage/v2/storage.proto
 // https://github.com/invertase/dart_firebase_admin/tree/googleapis-storage/packages/googleapis_storage
@@ -28,71 +28,42 @@ import 'retry.dart';
 // Discovery service or proto?
 // How to run retry conformance tests?
 
+typedef example_callback = ffi.Void Function();
+
 final class StorageService {
   static const _host = 'storage.googleapis.com';
+  final shim.ShimClient _client;
 
-  final http.Client client;
+  StorageService() : _client = shim.createClient();
 
-  StorageService(this.client);
+  /*
+  Future<void> write(String bucketName) async {
+    final w = writeObject(
+      _client,
+      bucketName.toNativeUtf8().cast(),
+      'test-object'.toNativeUtf8().cast(),
+    );
+    writeChunk(w, 'test'.toNativeUtf8().cast(), 4);
+    destroyWriter(w);
+  }*/
 
-  Future<bool> bucketExists(
-    String bucketName, {
-    Retry retry = defaultRetry,
-  }) async {
-    final url = Uri.https(_host, 'storage/v1/b/$bucketName');
-    try {
-      await retry.run(() => client.head(url));
-      return true;
-    } on NotFoundException {
-      return false;
+  Future<void> createBucket(String bucketName) async {
+    final completer = Completer<void>();
+    void callback() {
+      completer.complete();
     }
-  }
 
-  Future<Bucket> createBucket({
-    required String bucketName,
-    String? project,
-    Retry retry = defaultRetry,
-  }) async {
-    final query = {if (project != null) 'project': project};
+    final c = ffi.NativeCallable<example_callback>.listener(callback);
 
-    final url = Uri.https(_host, 'storage/v1/b', query);
-    final response = await retry.run(
-      () => client.post(
-        url,
-        headers: {'content-type': 'application/json'},
-        body: jsonEncode({'name': bucketName}),
-      ),
+    shim.createBucket(
+      _client,
+      bucketName.toNativeUtf8().cast(),
+      c.nativeFunction,
     );
-    return bucket.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-      this,
-    );
-  }
-
-  Future<void> deleteBucket({
-    required String bucketName,
-    String? project,
-    Retry retry = defaultRetry,
-  }) async {
-    final url = Uri.https(_host, 'storage/v1/b/$bucketName');
-    await retry.run(() => client.delete(url));
-  }
-
-  Future<List<Bucket>> getBuckets({
-    String? project,
-    Retry retry = defaultRetry,
-  }) async {
-    final query = {if (project != null) 'project': project};
-
-    final url = Uri.https(_host, 'storage/v1/b', query);
-    final response = await retry.run(() => client.get(url));
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return (json['items'] as List<dynamic>)
-        .map((e) => bucket.fromJson(e as Map<String, dynamic>, this))
-        .toList();
+    return completer.future;
   }
 
   void close() {
-    client.close();
+    shim.destroyClient(_client);
   }
 }

@@ -17,5 +17,4 @@ library;
 
 export 'package:google_cloud_rpc/exceptions.dart';
 
-export 'src/bucket.dart' show Bucket;
 export 'src/storage.dart' show StorageService;

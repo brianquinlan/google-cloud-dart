@@ -1,0 +1,19 @@
+# Run with `dart run ffigen --config ffigen.yaml`.
+name: ShimBindings
+description: |
+  Bindings for `src/shim.h`.
+output: 'lib/src/shim.dart'
+headers:
+  entry-points:
+    - 'shim.h'
+  include-directives:
+    - 'shim.h'
+preamble: |
+  // Copyright (c) 2023, the Dart project authors.  Please see the AUTHORS file
+  // for details. All rights reserved. Use of this source code is governed by a
+  // BSD-style license that can be found in the LICENSE file.
+comments:
+  style: any
+  length: full
+ffi-native:
+  asset-id: package:google_cloud_storage/shim
