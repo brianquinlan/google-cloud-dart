@@ -28,7 +28,10 @@ import 'shim.dart' as shim;
 // Discovery service or proto?
 // How to run retry conformance tests?
 
-typedef example_callback = ffi.Void Function();
+typedef example_callback = ffi.Void Function(shim.ShimBucketMetadata metadata);
+
+typedef object_metadata_callback =
+    ffi.Void Function(shim.ShimObjectMetadata metadata);
 
 final class StorageService {
   static const _host = 'storage.googleapis.com';
@@ -49,7 +52,7 @@ final class StorageService {
 
   Future<void> createBucket(String bucketName) async {
     final completer = Completer<void>();
-    void callback() {
+    void callback(shim.ShimBucketMetadata metadata) {
       completer.complete();
     }
 
@@ -58,6 +61,27 @@ final class StorageService {
     shim.createBucket(
       _client,
       bucketName.toNativeUtf8().cast(),
+      "".toNativeUtf8().cast(),
+      0,
+      "".toNativeUtf8().cast(),
+      c.nativeFunction,
+    );
+    return completer.future;
+  }
+
+  Future<void> getObjectMetadata(String bucketName, String objectName) async {
+    final completer = Completer<void>();
+    void callback(shim.ShimObjectMetadata metadata) {
+      print(shim.shimObjectMetadataSize(metadata));
+      completer.complete();
+    }
+
+    final c = ffi.NativeCallable<object_metadata_callback>.listener(callback);
+
+    shim.getObjectMetadata(
+      _client,
+      bucketName.toNativeUtf8().cast(),
+      objectName.toNativeUtf8().cast(),
       c.nativeFunction,
     );
     return completer.future;

@@ -11,25 +11,65 @@ library;
 
 import 'dart:ffi' as ffi;
 
+/// Creates a GCS client with default options.
 @ffi.Native<ShimClient Function()>()
 external ShimClient createClient();
 
+/// Destroys a GCS client.
 @ffi.Native<ffi.Void Function(ShimClient)>()
 external void destroyClient(ShimClient client);
 
+/// Uploads a file to GCS.
+/// This function is asynchronous and invokes the callback when complete.
 @ffi.Native<
   ffi.Void Function(
     ShimClient,
     ffi.Pointer<ffi.Char>,
-    ffi.Pointer<ffi.NativeFunction<ffi.Void Function()>>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<
+      ffi.NativeFunction<ffi.Void Function(ShimObjectMetadata metadata)>
+    >,
+  )
+>()
+external void uploadFile(
+  ShimClient shim_client,
+  ffi.Pointer<ffi.Char> file_name,
+  ffi.Pointer<ffi.Char> bucket_name,
+  ffi.Pointer<ffi.Char> object_name,
+  ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ShimObjectMetadata metadata)>
+  >
+  callback,
+);
+
+/// Creates a GCS bucket.
+/// This function is asynchronous and invokes the callback when complete.
+@ffi.Native<
+  ffi.Void Function(
+    ShimClient,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    shim_bool,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<
+      ffi.NativeFunction<ffi.Void Function(ShimBucketMetadata metadata)>
+    >,
   )
 >()
 external void createBucket(
   ShimClient shim_client,
   ffi.Pointer<ffi.Char> bucket_name,
-  ffi.Pointer<ffi.NativeFunction<ffi.Void Function()>> callback,
+  ffi.Pointer<ffi.Char> override_project_id,
+  int enable_object_retention,
+  ffi.Pointer<ffi.Char> predefined_acl,
+  ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ShimBucketMetadata metadata)>
+  >
+  callback,
 );
 
+/// Initiates a streaming write to a GCS object.
 @ffi.Native<
   ShimObjectWriteStream Function(
     ShimClient,
@@ -38,11 +78,13 @@ external void createBucket(
   )
 >()
 external ShimObjectWriteStream writeObject(
-  ShimClient client,
+  ShimClient shim_client,
   ffi.Pointer<ffi.Char> bucket_name,
   ffi.Pointer<ffi.Char> object_name,
 );
 
+/// Writes a chunk of data to an object write stream.
+/// Returns 1 on success, 0 on failure.
 @ffi.Native<
   ffi.Int Function(ShimObjectWriteStream, ffi.Pointer<ffi.Char>, ffi.Int)
 >()
@@ -52,13 +94,320 @@ external int writeChunk(
   int size,
 );
 
+/// Closes and destroys an object write stream.
 @ffi.Native<ffi.Void Function(ShimObjectWriteStream)>()
 external void destroyWriter(ShimObjectWriteStream writer);
 
+/// Gets object metadata from GCS.
+/// This function is asynchronous and invokes the callback when complete.
+@ffi.Native<
+  ffi.Void Function(
+    ShimClient,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<
+      ffi.NativeFunction<ffi.Void Function(ShimObjectMetadata metadata)>
+    >,
+  )
+>()
+external void getObjectMetadata(
+  ShimClient shim_client,
+  ffi.Pointer<ffi.Char> bucket_name,
+  ffi.Pointer<ffi.Char> object_name,
+  ffi.Pointer<
+    ffi.NativeFunction<ffi.Void Function(ShimObjectMetadata metadata)>
+  >
+  callback,
+);
+
+/// Returns true if the metadata represents a success status.
+@ffi.Native<shim_bool Function(ShimObjectMetadata)>()
+external int shimObjectMetadataOk(ShimObjectMetadata metadata);
+
+/// Returns the object name from metadata. The returned string is valid as long
+/// as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataName(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns the bucket name from metadata. The returned string is valid as long
+/// as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataBucket(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns the object size from metadata. Returns 0 if metadata is from a
+/// failure.
+@ffi.Native<shim_uint64_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataSize(ShimObjectMetadata metadata);
+
+/// Returns content type from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataContentType(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns MD5 hash from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataMd5Hash(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns CRC32C from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataCrc32c(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns generation from metadata. Returns 0 if metadata is from a failure.
+@ffi.Native<shim_int64_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataGeneration(ShimObjectMetadata metadata);
+
+/// Returns metageneration from metadata. Returns 0 if metadata is from a
+/// failure.
+@ffi.Native<shim_int64_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataMetageneration(ShimObjectMetadata metadata);
+
+/// Returns storage class from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataStorageClass(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns time created from metadata. Returns 0 if metadata is from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataTimeCreated(ShimObjectMetadata metadata);
+
+/// Returns cache control from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataCacheControl(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns component count from metadata. Returns 0 if metadata is from a
+/// failure.
+@ffi.Native<ffi.Int Function(ShimObjectMetadata)>()
+external int shimObjectMetadataComponentCount(ShimObjectMetadata metadata);
+
+/// Returns content disposition from metadata. The returned string is valid as
+/// long as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataContentDisposition(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns content encoding from metadata. The returned string is valid as long
+/// as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataContentEncoding(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns content language from metadata. The returned string is valid as long
+/// as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataContentLanguage(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns custom time from metadata. Returns 0 if metadata is from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataCustomTime(ShimObjectMetadata metadata);
+
+/// Returns ETag from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataETag(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns event-based hold from metadata. Returns false if metadata is from a
+/// failure.
+@ffi.Native<shim_bool Function(ShimObjectMetadata)>()
+external int shimObjectMetadataEventBasedHold(ShimObjectMetadata metadata);
+
+/// Returns ID from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataId(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns KMS key name from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataKmsKeyName(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns media link from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataMediaLink(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns retention expiration time from metadata. Returns 0 if metadata is
+/// from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataRetentionExpirationTime(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns self link from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataSelfLink(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns temporary hold from metadata. Returns false if metadata is from a
+/// failure.
+@ffi.Native<shim_bool Function(ShimObjectMetadata)>()
+external int shimObjectMetadataTemporaryHold(ShimObjectMetadata metadata);
+
+/// Returns time deleted from metadata. Returns 0 if metadata is from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataTimeDeleted(ShimObjectMetadata metadata);
+
+/// Returns time storage class updated from metadata. Returns 0 if metadata is
+/// from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataTimeStorageClassUpdated(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns updated time from metadata. Returns 0 if metadata is from a failure.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataUpdated(ShimObjectMetadata metadata);
+
+/// Returns owner entity from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataOwnerEntity(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns owner entity ID from metadata. The returned string is valid as long
+/// as metadata is not freed. Returns NULL if metadata is from a failure.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataOwnerEntityId(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns whether retention is set on metadata.
+@ffi.Native<shim_bool Function(ShimObjectMetadata)>()
+external int shimObjectMetadataHasRetention(ShimObjectMetadata metadata);
+
+/// Returns retention mode from metadata. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure or
+/// retention is not set.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataRetentionMode(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns retention retain-until-time from metadata. Returns 0 if metadata is
+/// from a failure or retention is not set.
+@ffi.Native<shim_time_t Function(ShimObjectMetadata)>()
+external int shimObjectMetadataRetentionRetainUntilTime(
+  ShimObjectMetadata metadata,
+);
+
+/// Returns user metadata count.
+@ffi.Native<ffi.Int Function(ShimObjectMetadata)>()
+external int shimObjectMetadataUserMetadataCount(ShimObjectMetadata metadata);
+
+/// Returns user metadata key by index. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure or index is
+/// out of bounds.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata, ffi.Int)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataUserMetadataKey(
+  ShimObjectMetadata metadata,
+  int index,
+);
+
+/// Returns user metadata value by index. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure or index is
+/// out of bounds.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata, ffi.Int)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataUserMetadataValue(
+  ShimObjectMetadata metadata,
+  int index,
+);
+
+/// Returns ACL count.
+@ffi.Native<ffi.Int Function(ShimObjectMetadata)>()
+external int shimObjectMetadataAclCount(ShimObjectMetadata metadata);
+
+/// Returns ACL entity by index. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure or index is
+/// out of bounds.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata, ffi.Int)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataAclEntity(
+  ShimObjectMetadata metadata,
+  int index,
+);
+
+/// Returns ACL role by index. The returned string is valid as long as
+/// metadata is not freed. Returns NULL if metadata is from a failure or index is
+/// out of bounds.
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ShimObjectMetadata, ffi.Int)>()
+external ffi.Pointer<ffi.Char> shimObjectMetadataAclRole(
+  ShimObjectMetadata metadata,
+  int index,
+);
+
+/// Frees memory associated with ShimObjectMetadata's members.
+@ffi.Native<ffi.Void Function(ShimObjectMetadata)>()
+external void freeShimObjectMetadata(ShimObjectMetadata metadata);
+
+/// Frees memory associated with ShimBucketMetadata's members.
+@ffi.Native<ffi.Void Function(ShimBucketMetadata)>()
+external void freeShimBucketMetadata(ShimBucketMetadata metadata);
+
+typedef shim_time_t = ffi.LongLong;
+typedef Dartshim_time_t = int;
+typedef shim_uint64_t = ffi.UnsignedLongLong;
+typedef Dartshim_uint64_t = int;
+typedef shim_int64_t = ffi.LongLong;
+typedef Dartshim_int64_t = int;
+typedef shim_bool = ffi.Int;
+typedef Dartshim_bool = int;
+
+/// Opaque struct representing a GCS client.
 final class ShimClient extends ffi.Struct {
+  /// NOLINT
   external ffi.Pointer<ffi.Void> _client;
 }
 
+/// Opaque struct representing a GCS object write stream.
 final class ShimObjectWriteStream extends ffi.Struct {
+  /// NOLINT
   external ffi.Pointer<ffi.Void> _writer;
+}
+
+/// Struct containing object metadata or status on error.
+final class ShimObjectMetadata extends ffi.Struct {
+  /// NOLINT
+  external ffi.Pointer<ffi.Void> _status;
+
+  /// NOLINT
+  external ffi.Pointer<ffi.Void> _metadata;
+}
+
+/// Struct containing bucket metadata or status on error.
+final class ShimBucketMetadata extends ffi.Struct {
+  /// NOLINT
+  external ffi.Pointer<ffi.Void> _status;
+
+  /// NOLINT
+  external ffi.Pointer<ffi.Void> _metadata;
 }

@@ -44,11 +44,18 @@ void main() async {
 
     test('create', () async {
       final bucketName =
-          TestHttpClient.isRecording || TestHttpClient.isReplaying
-          ? 'dart-cloud-storage-test-bucket-create'
-          : uniqueBucketName();
+          //          TestHttpClient.isRecording || TestHttpClient.isReplaying
+          //        ? 'dart-cloud-storage-test-bucket-create'
+          //:
+          //
+          uniqueBucketName();
 
-      final bucket = await storageService.createBucket(bucketName);
+      //      final bucket = await storageService.createBucket(bucketName);
+      // https://storage.googleapis.com/dart-cloud-storage-test-bucket-create/Baelish_Portrait_5th_level%20(2).webp
+      final bucket = await storageService.getObjectMetadata(
+        'dart-cloud-storage-test-bucket-create',
+        'Baelish_Portrait_5th_level (2).webp',
+      );
     });
   });
 }
