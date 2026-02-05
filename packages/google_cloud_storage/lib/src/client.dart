@@ -40,6 +40,54 @@ final class Storage {
   Storage({required http.Client client, required this.projectId})
     : _client = ServiceClient(client: client);
 
+  /// Retrieves the metadata for a Google Cloud Storage bucket.
+  ///
+  /// This operation is always idempotent.
+  ///
+  /// If set, `ifMetagenerationMatch` makes fetching the bucket metadata
+  /// conditional on whether the bucket's metageneration matches the provided
+  /// value. If the metageneration does not match, a
+  /// [PreconditionFailedException] is thrown.
+  ///
+  /// `projection` controls the level of detail returned in the response. A
+  /// value of `"full"` returns all bucket properties, while a value of
+  /// `"noAcl"` (the default) omits the `owner`, `acl`, and `defaultObjectAcl`
+  /// properties.
+  ///
+  /// If set, `userProject` is the project to be billed for this request. This
+  /// argument must be set for [Requester Pays] buckets.
+  ///
+  /// See [API reference docs](https://cloud.google.com/storage/docs/json_api/v1/buckets/get).
+  ///
+  /// [Requester Pays]: https://docs.cloud.google.com/storage/docs/requester-pays
+  Future<BucketMetadata> bucketMetadata(
+    String bucketName, {
+    int? ifMetagenerationMatch,
+    // TODO(https://github.com/googleapis/google-cloud-dart/issues/115):
+    // support ifMetagenerationNotMatch.
+    //
+    // If `ifMetagenerationNotMatch` is set, the server will respond with a 304
+    // status code and an empty body. This will cause `buckets.patch` to throw
+    // `TypeError` during JSON deserialization.
+    String? projection,
+    String? userProject,
+    RetryRunner retry = defaultRetry,
+  }) async => await retry.run(() async {
+    final url = Uri(
+      scheme: 'https',
+      host: 'storage.googleapis.com',
+      pathSegments: ['storage', 'v1', 'b', bucketName],
+    );
+    final queryParams = {
+      'ifMetagenerationMatch': ?ifMetagenerationMatch?.toString(),
+      'project': projectId,
+      'projection': ?projection,
+      'userProject': ?userProject,
+    };
+    final j = await _client.get(url.replace(queryParameters: queryParams));
+    return bucketMetadataFromJson(j as Map<String, Object?>);
+  }, isIdempotent: true);
+
   /// Create a new Google Cloud Storage bucket.
   ///
   /// This operation is always idempotent. Throws [ConflictException] if the
@@ -94,6 +142,7 @@ final class Storage {
   /// See [API reference docs](https://cloud.google.com/storage/docs/json_api/v1/buckets/patch).
   ///
   /// [Requester Pays]: https://docs.cloud.google.com/storage/docs/requester-pays
+  // This is tested in get_bucket_meta_data_test.dart.
   Future<BucketMetadata> patchBucket(
     String bucketName,
     BucketMetadataPatchBuilder metadata, {
