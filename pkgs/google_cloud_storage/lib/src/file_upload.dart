@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -53,6 +55,66 @@ String _boundaryString() {
     growable: false,
   );
   return '$prefix${list.join()}';
+}
+
+class StreamedUpload {
+  final IOSink sink;
+  final Future<ObjectMetadata> metadata;
+
+  StreamedUpload(this.sink, this.metadata);
+}
+
+StreamedUpload uploadFileStream(
+  http.Client client,
+  Uri url, {
+  ObjectMetadata? metadata,
+}) {
+  final boundary = _boundaryString();
+
+  final metadataJson = metadata == null
+      ? <String, Object?>{}
+      : objectMetadataToJson(metadata);
+
+  final contentType = metadata?.contentType ?? 'application/octet-stream';
+
+  final request = http.StreamedRequest('POST', url);
+  request.headers['Content-Type'] = 'multipart/related; boundary=$boundary';
+
+  final metadataPart = utf8.encode(
+    '--$boundary\r\n'
+    'Content-Type: application/json; charset=UTF-8\r\n'
+    '\r\n'
+    '${jsonEncode(metadataJson)}\r\n'
+    '--$boundary\r\n'
+    'Content-Type: $contentType\r\n'
+    '\r\n',
+  );
+
+  final suffixPart = utf8.encode('\r\n--$boundary--\r\n');
+
+  request.sink.add(metadataPart);
+
+  final controller = StreamController<List<int>>(sync: true);
+  controller.stream.listen(
+    request.sink.add,
+    onError: request.sink.addError,
+    onDone: () {
+      request.sink.add(suffixPart);
+      request.sink.close();
+    },
+  );
+
+  final responseFuture = client.send(request).then((response) async {
+    final responseBody = await response.stream.bytesToString();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ServiceException.fromHttpResponse(response, responseBody);
+    }
+    return objectMetadataFromJson(
+      jsonDecode(responseBody) as Map<String, Object?>,
+    );
+  });
+
+  return StreamedUpload(IOSink(controller.sink), responseFuture);
 }
 
 /// Upload the given content as a Google Cloud Storage object using the

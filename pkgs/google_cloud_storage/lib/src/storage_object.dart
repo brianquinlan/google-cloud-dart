@@ -20,6 +20,7 @@ import 'package:meta/meta.dart';
 import 'bucket.dart';
 import 'bucket_metadata.dart';
 import 'client.dart';
+import 'file_upload.dart' show StreamedUpload;
 import 'object_metadata.dart';
 import 'object_metadata_patch_builder.dart';
 import 'retry.dart';
@@ -312,5 +313,24 @@ final class StorageObject {
     projection: projection,
     userProject: userProject,
     retry: retry,
+  );
+
+  /// Creates or updates the content of a [Google Cloud Storage object][].
+  ///
+  /// See [Storage.uploadObjectStream] for details.
+  Future<StreamedUpload> uploadStream({
+    ObjectMetadata? metadata,
+    BigInt? ifGenerationMatch,
+    String? predefinedAcl,
+    String? projection,
+    String? userProject,
+  }) => storage.uploadObjectStream(
+    bucketName,
+    name,
+    metadata: metadata,
+    ifGenerationMatch: ifGenerationMatch,
+    predefinedAcl: predefinedAcl,
+    projection: projection,
+    userProject: userProject,
   );
 }
