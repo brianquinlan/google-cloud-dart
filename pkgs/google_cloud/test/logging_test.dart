@@ -54,24 +54,11 @@ void main() {
                 print: (_, _, _, String line) => stdoutLines.add(line),
               ),
               () async {
-                try {
-                  response = await handler(
-                    responseType.toRequest(
-                      responseScenario == _ResponseScenarios.successfulWithLogs,
-                    ),
-                  );
-                } catch (e, s) {
-                  if (responseScenario ==
-                          _ResponseScenarios.nonHttpResponseError &&
-                      environment == _Environment.normal) {
-                    stderrLines
-                      ..add('Exception: $e')
-                      ..add(s.toString());
-                    response = Response.internalServerError();
-                  } else {
-                    rethrow;
-                  }
-                }
+                response = await handler(
+                  responseType.toRequest(
+                    responseScenario == _ResponseScenarios.successfulWithLogs,
+                  ),
+                );
               },
             ),
             stdout: () => _MockStdout(stdoutLines),
@@ -98,6 +85,132 @@ void main() {
       }
     }
   }
+
+  test('Middleware rethrows HijackException', () async {
+    final middleware = createLoggingMiddleware();
+    final handler = middleware((request) => throw const HijackException());
+
+    expect(
+      () => handler(Request('GET', Uri.parse('http://localhost/'))),
+      throwsA(isA<HijackException>()),
+    );
+  });
+
+  test(
+    'cloudLoggingMiddleware propagates HijackException and does not log',
+    () async {
+      final middleware = cloudLoggingMiddleware('project-id');
+      final handler = middleware((request) => throw const HijackException());
+
+      final stdoutLines = <String>[];
+
+      await runZoned(
+        zoneSpecification: ZoneSpecification(
+          print: (_, _, _, String line) => stdoutLines.add(line),
+        ),
+        () async {
+          final future = handler(
+            Request('GET', Uri.parse('http://localhost/')),
+          );
+          await expectLater(future, throwsA(isA<HijackException>()));
+        },
+      );
+
+      expect(stdoutLines, isEmpty);
+    },
+  );
+
+  test(
+    'HttpResponseException with multi-line details is formatted pretty',
+    () async {
+      final middleware = createLoggingMiddleware();
+      final handler = middleware(
+        (request) => throw HttpResponseException(
+          400,
+          'with multi-line details',
+          details: [
+            {'message': 'line 1\nline 2', 'code': 42},
+            {'message2': 'line 3\nline 4', 'code2': 43},
+          ],
+        ),
+      );
+
+      final response = await handler(
+        Request('GET', Uri.parse('http://localhost/')),
+      );
+
+      expect(response.statusCode, 400);
+      final body = await response.readAsString();
+      expect(
+        body,
+        contains('''
+Details:
+  - message: line 1
+             line 2
+    code: 42
+  - message2: line 3
+              line 4
+    code2: 43'''),
+      );
+    },
+  );
+
+  test(
+    'HttpResponseException with empty details maps outputs empty map literal',
+    () async {
+      final middleware = createLoggingMiddleware();
+      final handler = middleware(
+        (request) => throw HttpResponseException(
+          400,
+          'with empty details',
+          details: [
+            {},
+            {'message': 'line 1'},
+          ],
+        ),
+      );
+
+      final response = await handler(
+        Request('GET', Uri.parse('http://localhost/')),
+      );
+
+      expect(response.statusCode, 400);
+      final body = await response.readAsString();
+      expect(
+        body,
+        contains('''
+Details:
+  - {}
+  - message: line 1'''),
+      );
+    },
+  );
+
+  test('cloudLoggingMiddleware uncaughtErrorHandler handles HijackException '
+      'safely after completion', () async {
+    final middleware = cloudLoggingMiddleware('project-id');
+
+    final handler = middleware((request) {
+      // Throw asynchronously after returning response.
+      Timer.run(() {
+        Zone.current.handleUncaughtError(
+          const HijackException(),
+          StackTrace.current,
+        );
+      });
+      return Response.ok('done');
+    });
+
+    final response = await handler(
+      Request('GET', Uri.parse('http://localhost/')),
+    );
+
+    expect(response.statusCode, 200);
+    expect(await response.readAsString(), 'done');
+
+    // Wait a bit for the timer to fire and ensure no crash happens.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  });
 }
 
 enum _ResponseScenarios {
@@ -147,7 +260,7 @@ TypeMatcher<Response> _responseScenarioFactory(
     _responseMatcher(
       statusCode: 400,
       contentType: anyOf(isNull, contains('text/plain')),
-      body: contains('minimal (400)'),
+      body: contains('HttpResponseException: minimal'),
     ),
   (_ResponseScenarios.httpResponseErrorMinimal, _ResponseType.json) =>
     _responseMatcher(
@@ -161,7 +274,11 @@ TypeMatcher<Response> _responseScenarioFactory(
     _responseMatcher(
       statusCode: 400,
       contentType: anyOf(isNull, contains('text/plain')),
-      body: contains('with details (400)'),
+      body: allOf([
+        contains('HttpResponseException: with details'),
+        contains('Details:'),
+        contains('type: type.googleapis.com/google.rpc.BadRequest'),
+      ]),
     ),
   (_ResponseScenarios.httpResponseErrorWithDetails, _ResponseType.json) =>
     _responseMatcher(
@@ -190,8 +307,14 @@ TypeMatcher<Response> _responseScenarioFactory(
   (_ResponseScenarios.nonHttpResponseError, _ResponseType.json) =>
     _responseMatcher(
       statusCode: 500,
-      contentType: anyOf(isNull, contains('text/plain')),
-      body: contains(internalServerErrorMessage),
+      contentType: contains('application/json'),
+      body: _jsonStringMatcher({
+        'error': {
+          'code': 500,
+          'message': internalServerErrorMessage,
+          'status': 'INTERNAL',
+        },
+      }),
     ),
   (_ResponseScenarios.successfulWithLogs, _) => _responseMatcher(
     statusCode: 200,
@@ -206,7 +329,7 @@ TypeMatcher<Response> _responseScenarioFactory(
 ) => switch ((responseScenario, environment)) {
   (_ResponseScenarios.httpResponseErrorMinimal, _Environment.cloud) => (
     stdout: _jsonStringMatcher({
-      'message': 'minimal (400)',
+      'message': 'HttpResponseException: minimal (400)',
       'severity': 'WARNING',
       'error': {'code': 400, 'message': 'minimal'},
       'stack_trace': _stackTraceMatcher,
@@ -216,7 +339,7 @@ TypeMatcher<Response> _responseScenarioFactory(
   ),
   (_ResponseScenarios.httpResponseErrorWithDetails, _Environment.cloud) => (
     stdout: _jsonStringMatcher({
-      'message': startsWith('with details (400)'),
+      'message': startsWith('HttpResponseException: with details'),
       'severity': 'WARNING',
       'error': {
         'code': 400,
@@ -229,6 +352,8 @@ TypeMatcher<Response> _responseScenarioFactory(
           },
         ],
       },
+      'inner_error': 'Invalid argument(s): inner error',
+      'inner_stack_trace': _stackTraceMatcher,
       'stack_trace': _stackTraceMatcher,
       'logging.googleapis.com/sourceLocation': isA<Map<String, dynamic>>(),
     }),
@@ -245,18 +370,21 @@ TypeMatcher<Response> _responseScenarioFactory(
   ),
   (_ResponseScenarios.httpResponseErrorMinimal, _Environment.normal) => (
     stdout: endsWith('[400] /'),
-    stderr: allOf([contains('minimal (400)'), _stackTraceMatcher]),
+    stderr: allOf([
+      contains('HttpResponseException: minimal (400)'),
+      _stackTraceMatcher,
+    ]),
   ),
   (_ResponseScenarios.httpResponseErrorWithDetails, _Environment.normal) => (
     stdout: endsWith('[400] /'),
     stderr: allOf([
+      contains('HttpResponseException: with details (400) [BAD_REQUEST]'),
       contains('Invalid argument(s): inner error (ArgumentError)'),
-      contains('[BAD_REQUEST]'),
       _stackTraceMatcher,
     ]),
   ),
   (_ResponseScenarios.nonHttpResponseError, _Environment.normal) => (
-    stdout: contains('[ERROR]'),
+    stdout: endsWith('[500] /'),
     stderr: allOf([contains('Exception: non http error'), _stackTraceMatcher]),
   ),
   (_ResponseScenarios.successfulWithLogs, _Environment.cloud) => (
@@ -328,12 +456,10 @@ TypeMatcher<Response> _responseMatcher({
 Matcher _jsonStringMatcher(Object expected) => isA<String>().having(
   (output) => jsonDecode(output) as Map<String, dynamic>,
   'decoded as a JSON map',
-  equals(expected),
+  expected,
 );
 
-final _stackTraceMatcher = matches(
-  RegExp(r'test/logging_test.dart[: ]\d+:\d+'),
-);
+final _stackTraceMatcher = matches(RegExp(r'test/logging_test.dart \d+:\d+'));
 
 Future<Response> _throwHttpResponseMinimal(_) =>
     throw HttpResponseException(400, 'minimal');
