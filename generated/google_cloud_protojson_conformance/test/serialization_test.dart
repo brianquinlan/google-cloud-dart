@@ -1579,17 +1579,23 @@ void main() async {
       });
 
       test(
-        'oneof_null_value',
+        'oneof_enum_integer',
         () {
-          checkField(
-            TestAllTypesProto3(oneofNullValue: NullValue.nullValue),
-            {'oneofNullValue': null},
-            (m) => m.oneofNullValue,
-            NullValue.nullValue,
-          );
+          final message = TestAllTypesProto3.fromJson({'oneofEnum': 1});
+          expect(message.oneofEnum, TestAllTypesProto3_NestedEnum.bar);
         },
-        skip: 'TODO(https://github.com/googleapis/google-cloud-dart/issues/99)',
+        skip:
+            'TODO(https://github.com/googleapis/google-cloud-dart/issues/252)',
       );
+
+      test('oneof_null_value', () {
+        checkField(
+          TestAllTypesProto3(oneofNullValue: NullValue.nullValue),
+          {'oneofNullValue': null},
+          (m) => m.oneofNullValue,
+          NullValue.nullValue,
+        );
+      });
 
       test(
         'duplicate',
@@ -2062,6 +2068,22 @@ void main() async {
             Duration(seconds: 1, nanos: 500000000),
           );
         });
+
+        test(
+          'non-zero padded',
+          () {
+            checkField(
+              TestAllTypesProto3(
+                optionalDuration: Duration(seconds: 1, nanos: 500000000),
+              ),
+              {'optionalDuration': '1.500s'},
+              (m) => m.optionalDuration,
+              Duration(seconds: 1, nanos: 500000000),
+            );
+          },
+          skip:
+              'TODO(https://github.com/googleapis/google-cloud-dart/issues/251)',
+        );
       });
 
       group('google.protobuf.Timestamp', () {
@@ -2114,6 +2136,22 @@ void main() async {
             FieldMask(paths: ['foo.bar', 'baz', 'foo_bar']),
           );
         });
+
+        test(
+          'camelCase conversion',
+          () {
+            checkField(
+              TestAllTypesProto3(
+                optionalFieldMask: FieldMask(paths: ['foo_bar', 'baz_qux']),
+              ),
+              {'optionalFieldMask': 'fooBar,bazQux'},
+              (m) => m.optionalFieldMask,
+              FieldMask(paths: ['foo_bar', 'baz_qux']),
+            );
+          },
+          skip:
+              'TODO(https://github.com/googleapis/google-cloud-dart/issues/253)',
+        );
       });
 
       group('google.protobuf.Struct', () {
@@ -2133,12 +2171,13 @@ void main() async {
             fields: <String, Value>{
               'a': Value(numberValue: 1.0),
               'b': Value(boolValue: true),
+              'c': Value(nullValue: NullValue.nullValue),
             },
           );
           checkField(
             TestAllTypesProto3(optionalStruct: s),
             {
-              'optionalStruct': {'a': 1.0, 'b': true},
+              'optionalStruct': {'a': 1.0, 'b': true, 'c': null},
             },
             (m) => m.optionalStruct,
             s,
@@ -2174,6 +2213,10 @@ void main() async {
       });
 
       group('google.protobuf.Value', () {
+        test('not set', () {
+          checkField(TestAllTypesProto3(), {}, (m) => m.optionalValue, null);
+        });
+
         test('null', () {
           checkField(
             TestAllTypesProto3(
@@ -2181,7 +2224,7 @@ void main() async {
             ),
             {'optionalValue': null},
             (m) => m.optionalValue,
-            isNull,
+            Value(nullValue: NullValue.nullValue),
           );
         });
 

@@ -5958,17 +5958,23 @@ final class FunctionDeclaration extends ProtoMessage {
         null => null,
         Object $1 => Schema.fromJson($1),
       },
-      parametersJsonSchema: switch (json['parametersJsonSchema']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      parametersJsonSchema: switch ((
+        json.containsKey('parametersJsonSchema'),
+        json['parametersJsonSchema'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
       response: switch (json['response']) {
         null => null,
         Object $1 => Schema.fromJson($1),
       },
-      responseJsonSchema: switch (json['responseJsonSchema']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      responseJsonSchema: switch ((
+        json.containsKey('responseJsonSchema'),
+        json['responseJsonSchema'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
       behavior: switch (json['behavior']) {
         null => FunctionDeclaration_Behavior.$default,
@@ -6419,9 +6425,9 @@ final class Schema extends ProtoMessage {
         null => '',
         Object $1 => decodeString($1),
       },
-      example: switch (json['example']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      example: switch ((json.containsKey('example'), json['example'])) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
       anyOf: switch (json['anyOf']) {
         null => [],
@@ -6433,9 +6439,9 @@ final class Schema extends ProtoMessage {
         List<Object?> $1 => [for (final i in $1) decodeString(i)],
         _ => throw const FormatException('"propertyOrdering" is not a list'),
       },
-      default$: switch (json['default']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      default$: switch ((json.containsKey('default'), json['default'])) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
     );
   }
@@ -8254,13 +8260,19 @@ final class GenerationConfig extends ProtoMessage {
         null => null,
         Object $1 => Schema.fromJson($1),
       },
-      responseJsonSchema: switch (json['_responseJsonSchema']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      responseJsonSchema: switch ((
+        json.containsKey('_responseJsonSchema'),
+        json['_responseJsonSchema'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
-      responseJsonSchemaOrdered: switch (json['responseJsonSchema']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      responseJsonSchemaOrdered: switch ((
+        json.containsKey('responseJsonSchema'),
+        json['responseJsonSchema'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
       presencePenalty: switch (json['presencePenalty']) {
         null => null,
@@ -13609,9 +13621,12 @@ final class PredictRequest extends ProtoMessage {
         List<Object?> $1 => [for (final i in $1) Value.fromJson(i)],
         _ => throw const FormatException('"instances" is not a list'),
       },
-      parameters: switch (json['parameters']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      parameters: switch ((
+        json.containsKey('parameters'),
+        json['parameters'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
     );
   }
@@ -13663,9 +13678,12 @@ final class PredictLongRunningRequest extends ProtoMessage {
         List<Object?> $1 => [for (final i in $1) Value.fromJson(i)],
         _ => throw const FormatException('"instances" is not a list'),
       },
-      parameters: switch (json['parameters']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      parameters: switch ((
+        json.containsKey('parameters'),
+        json['parameters'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
     );
   }

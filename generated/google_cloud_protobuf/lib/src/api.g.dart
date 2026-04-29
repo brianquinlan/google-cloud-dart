@@ -1711,7 +1711,10 @@ final class NullValue extends ProtoEnum {
 
   const NullValue(super.value);
 
-  factory NullValue.fromJson(Object? json) => NullValue(json as String);
+  factory NullValue.fromJson(Object? json) => _NullValueHelper.decode(json);
+
+  @override
+  Object? toJson() => _NullValueHelper.encode(this);
 
   bool get isNotDefault => this != $default;
 

@@ -1418,9 +1418,9 @@ final class Value extends ProtoMessage {
   factory Value.fromJson(Object? j) {
     final json = j as Map<String, Object?>;
     return Value(
-      nullValue: switch (json['nullValue']) {
-        null => null,
-        Object $1 => NullValue.fromJson($1),
+      nullValue: switch ((json.containsKey('nullValue'), json['nullValue'])) {
+        (false, _) => null,
+        (true, Object? $1) => NullValue.fromJson($1),
       },
       booleanValue: switch (json['booleanValue']) {
         null => null,
