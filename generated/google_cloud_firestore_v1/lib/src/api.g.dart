@@ -1418,9 +1418,9 @@ final class Value extends ProtoMessage {
   factory Value.fromJson(Object? j) {
     final json = j as Map<String, Object?>;
     return Value(
-      nullValue: switch (json['nullValue']) {
-        null => null,
-        Object $1 => NullValue.fromJson($1),
+      nullValue: switch ((json.containsKey('nullValue'), json['nullValue'])) {
+        (false, _) => null,
+        (true, Object? $1) => NullValue.fromJson($1),
       },
       booleanValue: switch (json['booleanValue']) {
         null => null,
@@ -5752,9 +5752,12 @@ final class ExecutionStats extends ProtoMessage {
         null => 0,
         Object $1 => decodeInt64($1),
       },
-      debugStats: switch (json['debugStats']) {
-        null => null,
-        Object $1 => Struct.fromJson($1),
+      debugStats: switch ((
+        json.containsKey('debugStats'),
+        json['debugStats'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Struct.fromJson($1),
       },
     );
   }

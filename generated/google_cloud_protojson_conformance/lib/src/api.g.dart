@@ -1066,9 +1066,12 @@ final class TestAllTypesProto3 extends ProtoMessage {
         null => null,
         Object $1 => TestAllTypesProto3_NestedEnum.fromJson($1),
       },
-      oneofNullValue: switch (json['oneofNullValue']) {
-        null => null,
-        Object $1 => NullValue.fromJson($1),
+      oneofNullValue: switch ((
+        json.containsKey('oneofNullValue'),
+        json['oneofNullValue'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => NullValue.fromJson($1),
       },
       optionalBoolWrapper: switch (json['optionalBoolWrapper']) {
         null => null,
@@ -1179,21 +1182,30 @@ final class TestAllTypesProto3 extends ProtoMessage {
         null => null,
         Object $1 => FieldMask.fromJson($1),
       },
-      optionalStruct: switch (json['optionalStruct']) {
-        null => null,
-        Object $1 => Struct.fromJson($1),
+      optionalStruct: switch ((
+        json.containsKey('optionalStruct'),
+        json['optionalStruct'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Struct.fromJson($1),
       },
       optionalAny: switch (json['optionalAny']) {
         null => null,
         Object $1 => Any.fromJson($1),
       },
-      optionalValue: switch (json['optionalValue']) {
-        null => null,
-        Object $1 => Value.fromJson($1),
+      optionalValue: switch ((
+        json.containsKey('optionalValue'),
+        json['optionalValue'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Value.fromJson($1),
       },
-      optionalNullValue: switch (json['optionalNullValue']) {
-        null => NullValue.$default,
-        Object $1 => NullValue.fromJson($1),
+      optionalNullValue: switch ((
+        json.containsKey('optionalNullValue'),
+        json['optionalNullValue'],
+      )) {
+        (false, _) => NullValue.$default,
+        (true, Object? $1) => NullValue.fromJson($1),
       },
       optionalEmpty: switch (json['optionalEmpty']) {
         null => null,

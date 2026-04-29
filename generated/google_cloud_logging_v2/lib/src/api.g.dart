@@ -2530,9 +2530,12 @@ final class LogEntry extends ProtoMessage {
         null => null,
         Object $1 => decodeString($1),
       },
-      jsonPayload: switch (json['jsonPayload']) {
-        null => null,
-        Object $1 => Struct.fromJson($1),
+      jsonPayload: switch ((
+        json.containsKey('jsonPayload'),
+        json['jsonPayload'],
+      )) {
+        (false, _) => null,
+        (true, Object? $1) => Struct.fromJson($1),
       },
       timestamp: switch (json['timestamp']) {
         null => null,

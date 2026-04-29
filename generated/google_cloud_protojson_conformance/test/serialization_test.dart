@@ -1578,18 +1578,14 @@ void main() async {
         );
       });
 
-      test(
-        'oneof_null_value',
-        () {
-          checkField(
-            TestAllTypesProto3(oneofNullValue: NullValue.nullValue),
-            {'oneofNullValue': null},
-            (m) => m.oneofNullValue,
-            NullValue.nullValue,
-          );
-        },
-        skip: 'TODO(https://github.com/googleapis/google-cloud-dart/issues/99)',
-      );
+      test('oneof_null_value', () {
+        checkField(
+          TestAllTypesProto3(oneofNullValue: NullValue.nullValue),
+          {'oneofNullValue': null},
+          (m) => m.oneofNullValue,
+          NullValue.nullValue,
+        );
+      });
 
       test(
         'duplicate',
@@ -2174,6 +2170,10 @@ void main() async {
       });
 
       group('google.protobuf.Value', () {
+        test('not set', () {
+          checkField(TestAllTypesProto3(), {}, (m) => m.optionalValue, null);
+        });
+
         test('null', () {
           checkField(
             TestAllTypesProto3(
@@ -2181,7 +2181,7 @@ void main() async {
             ),
             {'optionalValue': null},
             (m) => m.optionalValue,
-            isNull,
+            Value(nullValue: NullValue.nullValue),
           );
         });
 

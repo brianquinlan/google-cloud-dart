@@ -40,7 +40,7 @@ abstract class ProtoEnum implements JsonEncodable {
   const ProtoEnum(this.value);
 
   @override
-  String toJson() => value;
+  Object? toJson() => value;
 
   @override
   bool operator ==(Object other) =>
@@ -502,5 +502,17 @@ class _ListValueHelper {
   static ListValue decode(Object? value) {
     final values = (value as List).map(Value.fromJson).toList();
     return ListValue(values: values);
+  }
+}
+
+/// See https://protobuf.dev/programming-guides/json/#null-values
+class _NullValueHelper {
+  static Object? encode(NullValue value) => null;
+
+  static NullValue decode(Object? value) {
+    if (value == 'NULL_VALUE' || value == null) {
+      return NullValue.nullValue;
+    }
+    throw FormatException('Invalid NullValue: $value');
   }
 }
