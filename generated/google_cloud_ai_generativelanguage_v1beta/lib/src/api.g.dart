@@ -4744,12 +4744,9 @@ final class Part extends ProtoMessage {
         null => Uint8List(0),
         Object $1 => decodeBytes($1),
       },
-      partMetadata: switch ((
-        json.containsKey('partMetadata'),
-        json['partMetadata'],
-      )) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      partMetadata: switch (json['partMetadata']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
     );
   }
@@ -6072,9 +6069,9 @@ final class FunctionCall extends ProtoMessage {
         null => '',
         Object $1 => decodeString($1),
       },
-      args: switch ((json.containsKey('args'), json['args'])) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      args: switch (json['args']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
     );
   }
@@ -6157,9 +6154,9 @@ final class FunctionResponse extends ProtoMessage {
         null => '',
         Object $1 => decodeString($1),
       },
-      response: switch ((json.containsKey('response'), json['response'])) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      response: switch (json['response']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
       parts: switch (json['parts']) {
         null => [],

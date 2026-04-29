@@ -1182,12 +1182,9 @@ final class TestAllTypesProto3 extends ProtoMessage {
         null => null,
         Object $1 => FieldMask.fromJson($1),
       },
-      optionalStruct: switch ((
-        json.containsKey('optionalStruct'),
-        json['optionalStruct'],
-      )) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      optionalStruct: switch (json['optionalStruct']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
       optionalAny: switch (json['optionalAny']) {
         null => null,

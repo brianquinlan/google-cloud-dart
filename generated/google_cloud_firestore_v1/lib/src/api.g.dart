@@ -5752,12 +5752,9 @@ final class ExecutionStats extends ProtoMessage {
         null => 0,
         Object $1 => decodeInt64($1),
       },
-      debugStats: switch ((
-        json.containsKey('debugStats'),
-        json['debugStats'],
-      )) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      debugStats: switch (json['debugStats']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
     );
   }

@@ -16,6 +16,7 @@
 library;
 
 import 'package:google_cloud_firestore_v1/firestore.dart';
+import 'package:google_cloud_protobuf/protobuf.dart' as proto;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
@@ -49,6 +50,27 @@ void firestoreTest(Future<Firestore> Function() createFirestore) {
       GetDocumentRequest(name: r.name),
     );
     expect(doc.fields['firstName']?.stringValue, 'Brian');
+  });
+
+  test('NullValue field', () async {
+    final r = await firestoreService.createDocument(
+      CreateDocumentRequest(
+        parent: 'projects/$projectId/databases/$databaseId/documents',
+        collectionId: 'users',
+        document: Document(
+          fields: {'isNull': Value(nullValue: proto.NullValue.nullValue)},
+        ),
+      ),
+    );
+    addTearDown(
+      () =>
+          firestoreService.deleteDocument(DeleteDocumentRequest(name: r.name)),
+    );
+
+    final doc = await firestoreService.getDocument(
+      GetDocumentRequest(name: r.name),
+    );
+    expect(doc.fields['isNull']?.nullValue, proto.NullValue.nullValue);
   });
 
   test('runQuery', () async {

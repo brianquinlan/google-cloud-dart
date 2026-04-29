@@ -5009,12 +5009,9 @@ final class MonitoredResourceMetadata extends ProtoMessage {
   factory MonitoredResourceMetadata.fromJson(Object? j) {
     final json = j as Map<String, Object?>;
     return MonitoredResourceMetadata(
-      systemLabels: switch ((
-        json.containsKey('systemLabels'),
-        json['systemLabels'],
-      )) {
-        (false, _) => null,
-        (true, Object? $1) => Struct.fromJson($1),
+      systemLabels: switch (json['systemLabels']) {
+        null => null,
+        Object $1 => Struct.fromJson($1),
       },
       userLabels: switch (json['userLabels']) {
         null => {},
