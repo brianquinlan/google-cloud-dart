@@ -216,7 +216,7 @@ class Value extends ProtoMessage {
       case Map<dynamic, dynamic> m:
         return Value(structValue: Struct.fromJson(m));
       default:
-        return Value(nullValue: NullValue.nullValue);
+        throw FormatException('Invalid Value: $json');
     }
   }
 
