@@ -261,6 +261,8 @@ class _DurationHelper {
   /// Encode into a decimal representation of the seconds and nanos, suffixed
   /// with 's'.
   ///
+  /// E.g., 3 seconds with 0 nanoseconds would be '3s'; 3 seconds with 70
+  /// nanosecond would be '3.000000070s'.
   /// See
   /// [Duration.java](https://github.com/protocolbuffers/protobuf/blob/44025909eb7064a008decaa60c305bddc8757b3a/java/util/src/main/java/com/google/protobuf/util/Durations.java#L200)
   static String encode(Duration duration) {
