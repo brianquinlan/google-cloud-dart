@@ -310,11 +310,65 @@ class _DurationHelper {
 
 class _FieldMaskHelper {
   /// Encode the field mask as a single comma-separated string.
-  static String encode(FieldMask fieldMask) => fieldMask.paths.join(',');
+  ///
+  /// See https://protobuf.dev/reference/php/api-docs/Google/Protobuf/FieldMask.html
+  /// See https://github.com/protocolbuffers/protobuf/blob/d4ea3dd49c093435443c129497a3e1f0d5b8cd3e/java/util/src/main/java/com/google/protobuf/util/FieldMaskUtil.java#L137
+  static String encode(FieldMask fieldMask) {
+    final paths = <String>[];
+    for (final path in fieldMask.paths) {
+      if (path.isNotEmpty) {
+        paths.add(_lowerUnderscoreToLowerCamel(path));
+      }
+    }
+    return paths.join(',');
+  }
 
   /// Decode the field mask from a single comma-separated string.
-  static FieldMask decode(Object? format) =>
-      FieldMask(paths: (format as String).split(','));
+  static FieldMask decode(Object? format) {
+    if (format is! String) {
+      throw FormatException(
+        'Expected string for FieldMask, got ${format.runtimeType}',
+      );
+    }
+    final paths = <String>[];
+    for (final path in format.split(',')) {
+      if (path.isNotEmpty) {
+        paths.add(_lowerCamelToLowerUnderscore(path));
+      }
+    }
+    return FieldMask(paths: paths);
+  }
+
+  static String _lowerUnderscoreToLowerCamel(String str) {
+    final sb = StringBuffer();
+    var capitalizeNext = false;
+    for (var i = 0; i < str.length; i++) {
+      final c = str[i];
+      if (c == '_') {
+        capitalizeNext = true;
+      } else if (capitalizeNext) {
+        sb.write(c.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        sb.write(c.toLowerCase());
+      }
+    }
+    return sb.toString();
+  }
+
+  static String _lowerCamelToLowerUnderscore(String str) {
+    final sb = StringBuffer();
+    for (var i = 0; i < str.length; i++) {
+      final c = str[i];
+      final codeUnits = c.codeUnits;
+      // A-Z code units in [65, 90].
+      if (codeUnits.length == 1 && codeUnits[0] >= 65 && codeUnits[0] <= 90) {
+        sb.write('_');
+      }
+      sb.write(c.toLowerCase());
+    }
+    return sb.toString();
+  }
 }
 
 /// Called from the Timestamp constructor to validate construction parameters.
