@@ -49,10 +49,16 @@ void main() {
   testCase(1, 500_000_000, '1.500s');
   testCase(1, 500_000, '1.000500s');
   testCase(1, 500, '1.000000500s');
-  testCase(-1, 0, '1s');
-  testCase(-1, 500_000_000, '1.500s');
-  testCase(-1, 500_000, '1.000500s');
-  testCase(-1, 500, '1.000000500s');
+  testCase(-1, 0, '-1s');
+  testCase(0, 500_000_000, '0.500s');
+  testCase(0, 500_000, '0.000500s');
+  testCase(0, 500, '0.000000500s');
+  testCase(0, -500_000_000, '-0.500s');
+  testCase(0, -500_000, '-0.000500s');
+  testCase(0, -500, '-0.000000500s');
+  testCase(-1, -500_000_000, '-1.500s');
+  testCase(-1, -500_000, '-1.000500s');
+  testCase(-1, -500, '-1.000000500s');
 
   // Verify durations can roundtrip from String -> Duration -> String.
   void roundTrip(String name, String encoding) {

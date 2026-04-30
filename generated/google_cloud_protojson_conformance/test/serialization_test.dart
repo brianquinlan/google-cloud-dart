@@ -2068,22 +2068,6 @@ void main() async {
             Duration(seconds: 1, nanos: 500000000),
           );
         });
-
-        test(
-          'non-zero padded',
-          () {
-            checkField(
-              TestAllTypesProto3(
-                optionalDuration: Duration(seconds: 1, nanos: 500000000),
-              ),
-              {'optionalDuration': '1.500s'},
-              (m) => m.optionalDuration,
-              Duration(seconds: 1, nanos: 500000000),
-            );
-          },
-          skip:
-              'TODO(https://github.com/googleapis/google-cloud-dart/issues/251)',
-        );
       });
 
       group('google.protobuf.Timestamp', () {
