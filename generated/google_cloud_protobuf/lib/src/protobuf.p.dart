@@ -330,12 +330,10 @@ class _FieldMaskHelper {
         'Expected string for FieldMask, got ${format.runtimeType}',
       );
     }
-    final paths = <String>[];
-    for (final path in format.split(',')) {
-      if (path.isNotEmpty) {
-        paths.add(_lowerCamelToLowerUnderscore(path));
-      }
-    }
+    final paths = <String>[
+      for (final path in format.split(','))
+        if (path.isNotEmpty) _lowerCamelToLowerUnderscore(path),
+    ];
     return FieldMask(paths: paths);
   }
 
