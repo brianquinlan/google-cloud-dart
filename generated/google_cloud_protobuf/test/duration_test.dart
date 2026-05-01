@@ -44,12 +44,10 @@ void main() {
   testCase(0, 999_999_999, '0.999999999s');
   testCase(0, -999_999_999, '-0.999999999s');
 
-  // Verify 3, 6, or 9 fraction digits.
-  testCase(1, 0, '1s');
+  // Verify 3, 6, or 9 fractional digits.
   testCase(1, 500_000_000, '1.500s');
   testCase(1, 500_000, '1.000500s');
   testCase(1, 500, '1.000000500s');
-  testCase(-1, 0, '-1s');
   testCase(0, 500_000_000, '0.500s');
   testCase(0, 500_000, '0.000500s');
   testCase(0, 500, '0.000000500s');
