@@ -313,15 +313,10 @@ class _FieldMaskHelper {
   ///
   /// See https://protobuf.dev/reference/php/api-docs/Google/Protobuf/FieldMask.html
   /// See https://github.com/protocolbuffers/protobuf/blob/d4ea3dd49c093435443c129497a3e1f0d5b8cd3e/java/util/src/main/java/com/google/protobuf/util/FieldMaskUtil.java#L137
-  static String encode(FieldMask fieldMask) {
-    final paths = <String>[];
-    for (final path in fieldMask.paths) {
-      if (path.isNotEmpty) {
-        paths.add(_lowerUnderscoreToLowerCamel(path));
-      }
-    }
-    return paths.join(',');
-  }
+  static String encode(FieldMask fieldMask) => fieldMask.paths
+      .where((path) => path.isNotEmpty)
+      .map(_lowerUnderscoreToLowerCamel)
+      .join(',');
 
   /// Decode the field mask from a single comma-separated string.
   static FieldMask decode(Object? format) {
