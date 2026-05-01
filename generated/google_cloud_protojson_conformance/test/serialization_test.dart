@@ -2115,27 +2115,11 @@ void main() async {
                 paths: ['foo.bar', 'baz', 'foo_bar'],
               ),
             ),
-            {'optionalFieldMask': 'foo.bar,baz,foo_bar'},
+            {'optionalFieldMask': 'foo.bar,baz,fooBar'},
             (m) => m.optionalFieldMask,
             FieldMask(paths: ['foo.bar', 'baz', 'foo_bar']),
           );
         });
-
-        test(
-          'camelCase conversion',
-          () {
-            checkField(
-              TestAllTypesProto3(
-                optionalFieldMask: FieldMask(paths: ['foo_bar', 'baz_qux']),
-              ),
-              {'optionalFieldMask': 'fooBar,bazQux'},
-              (m) => m.optionalFieldMask,
-              FieldMask(paths: ['foo_bar', 'baz_qux']),
-            );
-          },
-          skip:
-              'TODO(https://github.com/googleapis/google-cloud-dart/issues/253)',
-        );
       });
 
       group('google.protobuf.Struct', () {
