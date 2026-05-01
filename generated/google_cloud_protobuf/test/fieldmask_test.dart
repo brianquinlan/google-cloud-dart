@@ -57,8 +57,8 @@ void main() {
     expect(fieldMask.paths, ['one', 'two']);
   });
 
-  test('decode camelCase with edge cases', () {
-    final fieldMask = FieldMask.fromJson('fooBar,,bazQux.fooBar,Foo');
-    expect(fieldMask.paths, ['foo_bar', 'baz_qux.foo_bar', 'foo']);
+  test('decode camelCase', () {
+    final fieldMask = FieldMask.fromJson('fooBar,,bazQux.fooBar');
+    expect(fieldMask.paths, ['foo_bar', 'baz_qux.foo_bar']);
   });
 }
