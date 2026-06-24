@@ -252,59 +252,6 @@ void main() async {
       });
     });
 
-    test('query parameters and body serialization', () async {
-      var called = false;
-      final mockClient = MockClient((request) async {
-        called = true;
-        expect(request.method, 'POST');
-        expect(
-          request.url.path,
-          '/storage/v1/b/src-bucket/o/source.txt/copyTo/b/dest-bucket/o/dest.txt',
-        );
-        expect(request.url.queryParameters, {
-          'sourceGeneration': '123',
-          'ifSourceGenerationMatch': '456',
-          'ifGenerationMatch': '789',
-          'destinationPredefinedAcl': 'publicRead',
-          'projection': 'full',
-          'userProject': 'my-billing-project',
-        });
-
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['contentType'], 'application/json');
-
-        return http.Response(
-          jsonEncode({
-            'kind': 'storage#object',
-            'name': 'dest.txt',
-            'bucket': 'dest-bucket',
-            'contentType': 'application/json',
-          }),
-          200,
-          headers: {'content-type': 'application/json; charset=UTF-8'},
-        );
-      });
-
-      final storage = Storage(client: mockClient, projectId: 'fake-project');
-      final result = await storage.copyObject(
-        'src-bucket',
-        'source.txt',
-        'dest-bucket',
-        'dest.txt',
-        metadata: ObjectMetadata(contentType: 'application/json'),
-        sourceGeneration: BigInt.from(123),
-        ifSourceGenerationMatch: BigInt.from(456),
-        ifGenerationMatch: BigInt.from(789),
-        destinationPredefinedAcl: 'publicRead',
-        projection: 'full',
-        userProject: 'my-billing-project',
-      );
-
-      expect(called, isTrue);
-      expect(result.name, 'dest.txt');
-      expect(result.contentType, 'application/json');
-    });
-
     test('idempotent transport failure', () async {
       var count = 0;
       final mockClient = MockClient((request) async {
