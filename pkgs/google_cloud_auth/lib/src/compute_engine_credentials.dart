@@ -20,6 +20,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import 'credential_exception.dart';
 import 'service_account_signer.dart';
 
 // Design based on:
@@ -29,9 +30,6 @@ import 'service_account_signer.dart';
 
 /// Credentials for Google Compute Engine, Cloud Run, Cloud Functions, and
 /// other environments providing a Google Cloud metadata server.
-///
-/// Signs messages using the Google Cloud Identity and Access Management (IAM)
-/// credentials API (`signBlob`).
 final class ComputeEngineCredentials implements ServiceAccountSigner {
   static const _defaultMetadataHost = 'metadata.google.internal';
   static const _metadataFlavorHeader = {'Metadata-Flavor': 'Google'};
@@ -40,9 +38,6 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
   /// The email address of the service account.
   @override
   final String clientEmail;
-
-  /// The Google Cloud project ID associated with the instance, if available.
-  final String? projectId;
 
   /// The universe domain for the service account.
   final String universeDomain;
@@ -56,9 +51,14 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
   String? _cachedAccessToken;
   DateTime? _accessTokenExpiry;
 
+  /// The active request to fetch a new token.
+  ///
+  /// This is used to prevent multiple concurrent requests from fetching new
+  /// tokens at the same time.
+  Future<String>? _activeTokenRequest;
+
   ComputeEngineCredentials._({
     required this.clientEmail,
-    required this.projectId,
     required this.universeDomain,
     required this.metadataHost,
     required http.Client client,
@@ -66,11 +66,15 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
   }) : _client = client,
        _ownsClient = ownsClient;
 
-  /// Returns the current access token for the service account, refreshing
-  /// it from the metadata server if expired.
-  Future<String> getAccessToken() => _getAccessToken();
-
-  Future<String> _getAccessToken({bool forceRefresh = false}) async {
+  /// A non-expired current OAuth2 access token for the service account.
+  ///
+  /// If the cached token is expired or if [forceRefresh] is `true`, then a new
+  /// token is fetched.
+  ///
+  /// It is safe to call this method concurrently.
+  ///
+  /// Throws [CredentialException] on failure.
+  Future<String> accessToken({bool forceRefresh = false}) async {
     if (!forceRefresh &&
         _cachedAccessToken != null &&
         _accessTokenExpiry != null) {
@@ -81,17 +85,29 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
       }
     }
 
+    return await (_activeTokenRequest ??= _fetchAccessToken().whenComplete(() {
+      _activeTokenRequest = null;
+    }));
+  }
+
+  Future<String> _fetchAccessToken() async {
     final tokenUri = Uri.http(
       metadataHost,
       '/computeMetadata/v1/instance/service-accounts/default/token',
     );
-    final response = await _client.get(
-      tokenUri,
-      headers: _metadataFlavorHeader,
-    );
+    final http.Response response;
+    try {
+      response = await _client.get(tokenUri, headers: _metadataFlavorHeader);
+    } on Exception catch (e, stackTrace) {
+      throw CredentialException(
+        'Failed to get access token from Compute Engine metadata server: $e',
+        innerException: e,
+        innerStackTrace: stackTrace,
+      );
+    }
 
     if (response.statusCode != 200) {
-      throw SigningException(
+      throw CredentialException(
         'Failed to get access token from Compute Engine metadata server: '
         'HTTP ${response.statusCode} ${response.body}',
       );
@@ -107,20 +123,22 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
       _cachedAccessToken = accessToken;
       _accessTokenExpiry = DateTime.now().add(Duration(seconds: expiresIn));
       return accessToken;
-    } on FormatException catch (e) {
-      throw SigningException(
+    } on FormatException catch (e, stackTrace) {
+      throw CredentialException(
         'Failed to parse token response from metadata server: $e',
-        e,
+        innerException: e,
+        innerStackTrace: stackTrace,
       );
     }
   }
 
   /// Creates a [ComputeEngineCredentials] instance, discovering configuration
   /// from the Compute Engine metadata server.
+  ///
+  /// Throws [CredentialException] on failure.
   static Future<ComputeEngineCredentials> create({
     http.Client? client,
     String? clientEmail,
-    String? projectId,
     String? universeDomain,
     String? metadataHost,
   }) async {
@@ -138,72 +156,75 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
           host,
           '/computeMetadata/v1/instance/service-accounts/default/email',
         );
-        final response = await httpClient.get(
-          emailUri,
-          headers: _metadataFlavorHeader,
-        );
+        final http.Response response;
+        try {
+          response = await httpClient.get(
+            emailUri,
+            headers: _metadataFlavorHeader,
+          );
+        } on Exception catch (e, stackTrace) {
+          throw CredentialException(
+            'Failed to get default service account email from metadata server: '
+            '$e',
+            innerException: e,
+            innerStackTrace: stackTrace,
+          );
+        }
         if (response.statusCode != 200) {
-          throw SigningException(
+          throw CredentialException(
             'Failed to get default service account email from metadata server: '
             'HTTP ${response.statusCode} ${response.body}',
           );
         }
         resolvedEmail = response.body.trim();
         if (resolvedEmail.isEmpty) {
-          throw SigningException(
+          throw CredentialException(
             'Empty service account email received from metadata server.',
           );
         }
       }
 
-      var resolvedProjectId = projectId;
-      if (resolvedProjectId == null || resolvedProjectId.isEmpty) {
-        try {
-          final projectUri = Uri.http(
-            host,
-            '/computeMetadata/v1/project/project-id',
-          );
-          final response = await httpClient.get(
-            projectUri,
-            headers: _metadataFlavorHeader,
-          );
-          if (response.statusCode == 200) {
-            final trimmed = response.body.trim();
-            if (trimmed.isNotEmpty) {
-              resolvedProjectId = trimmed;
-            }
-          }
-        } catch (_) {
-          // Project ID is optional.
-        }
-      }
-
       var resolvedUniverseDomain = universeDomain;
       if (resolvedUniverseDomain == null || resolvedUniverseDomain.isEmpty) {
+        final universeUri = Uri.http(
+          host,
+          '/computeMetadata/v1/universe/universe-domain',
+        );
+        final http.Response response;
         try {
-          final universeUri = Uri.http(
-            host,
-            '/computeMetadata/v1/universe/universe-domain',
-          );
-          final response = await httpClient.get(
+          response = await httpClient.get(
             universeUri,
             headers: _metadataFlavorHeader,
           );
-          if (response.statusCode == 200) {
-            final trimmed = response.body.trim();
-            if (trimmed.isNotEmpty) {
-              resolvedUniverseDomain = trimmed;
-            }
-          }
-        } catch (_) {
-          // Universe domain is optional; default to googleapis.com.
+        } on Exception catch (e, stackTrace) {
+          throw CredentialException(
+            'Failed to get universe domain from metadata server: $e',
+            innerException: e,
+            innerStackTrace: stackTrace,
+          );
         }
-        resolvedUniverseDomain ??= 'googleapis.com';
+        // 404 indicates an older metadata server without universe-domain
+        // support, and early versions returned an empty string for the default
+        // universe; both default to 'googleapis.com'.
+        // See:
+        // https://github.com/googleapis/google-auth-library-java/blob/9ac2d4340ebc6a8582b898e97f65aeed3c1776d6/oauth2_http/java/com/google/auth/oauth2/ComputeEngineCredentials.java#L282
+        if (response.statusCode == 200) {
+          final trimmed = response.body.trim();
+          resolvedUniverseDomain = trimmed.isNotEmpty
+              ? trimmed
+              : 'googleapis.com';
+        } else if (response.statusCode == 404) {
+          resolvedUniverseDomain = 'googleapis.com';
+        } else {
+          throw CredentialException(
+            'Failed to get universe domain from metadata server: '
+            'HTTP ${response.statusCode} ${response.body}',
+          );
+        }
       }
 
       return ComputeEngineCredentials._(
         clientEmail: resolvedEmail,
-        projectId: resolvedProjectId,
         universeDomain: resolvedUniverseDomain,
         metadataHost: host,
         client: httpClient,
@@ -217,6 +238,9 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
     }
   }
 
+  // Equivalent of:
+  // - https://github.com/googleapis/google-auth-library-java/blob/9ac2d4340ebc6a8582b898e97f65aeed3c1776d6/oauth2_http/java/com/google/auth/oauth2/ComputeEngineCredentials.java#L595-L613
+  // - https://github.com/googleapis/google-auth-library-python/blob/2ea24b03436765fa3cf279ce148482ff6332136b/google/auth/compute_engine/_metadata.py#L122-L144
   /// Checks if the application is running in an environment with an accessible
   /// Compute Engine metadata server.
   static Future<bool> isOnComputeEngine({
@@ -257,28 +281,46 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
 
   /// Signs [message] using the Identity and Access Management (IAM)
   /// `signBlob` API.
+  ///
+  /// Throws [CredentialException] on failure.
   @override
   Future<Uint8List> sign(List<int> message) async {
-    final signBlobUrl = Uri.https(
-      'iamcredentials.$universeDomain',
-      '/v1/projects/-/serviceAccounts/$clientEmail:signBlob',
+    final signBlobUrl = Uri(
+      scheme: 'https',
+      host: 'iamcredentials.$universeDomain',
+      pathSegments: [
+        'v1',
+        'projects',
+        '-',
+        'serviceAccounts',
+        '$clientEmail:signBlob',
+      ],
     );
     final requestBody = jsonEncode({'payload': base64.encode(message)});
 
-    var token = await _getAccessToken();
+    var token = await accessToken();
     var attempts = 0;
     var refreshedToken = false;
 
     while (true) {
       attempts++;
-      final response = await _client.post(
-        signBlobUrl,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      );
+      final http.Response response;
+      try {
+        response = await _client.post(
+          signBlobUrl,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
+        );
+      } on Exception catch (e, stackTrace) {
+        throw SigningException(
+          'Failed to sign message via IAM signBlob API: $e',
+          innerException: e,
+          innerStackTrace: stackTrace,
+        );
+      }
 
       if (response.statusCode == 200) {
         try {
@@ -288,10 +330,11 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
             throw const FormatException("Missing 'signedBlob' in response");
           }
           return Uint8List.fromList(base64.decode(signedBlob));
-        } on FormatException catch (e) {
+        } on FormatException catch (e, stackTrace) {
           throw SigningException(
             'Failed to parse signBlob response: ${e.message}',
-            e,
+            innerException: e,
+            innerStackTrace: stackTrace,
           );
         }
       }
@@ -299,7 +342,7 @@ final class ComputeEngineCredentials implements ServiceAccountSigner {
       // If token expired (401), retry once with a freshly requested token.
       if (response.statusCode == 401 && !refreshedToken) {
         refreshedToken = true;
-        token = await _getAccessToken(forceRefresh: true);
+        token = await accessToken(forceRefresh: true);
         continue;
       }
 

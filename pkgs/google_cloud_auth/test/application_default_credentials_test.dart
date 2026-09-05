@@ -100,7 +100,7 @@ void main() {
       skip: _canUseWebCrypto ? null : 'Requires Dart 3.13 or later',
     );
 
-    test('throws SigningException when GOOGLE_APPLICATION_CREDENTIALS file '
+    test('throws CredentialException when GOOGLE_APPLICATION_CREDENTIALS file '
         'does not exist', () async {
       expect(
         () => applicationDefaultCredentials(
@@ -112,7 +112,7 @@ void main() {
           },
         ),
         throwsA(
-          isA<SigningException>().having(
+          isA<CredentialException>().having(
             (e) => e.message,
             'message',
             contains('does not exist'),
@@ -121,8 +121,8 @@ void main() {
       );
     });
 
-    test('throws SigningException when GOOGLE_APPLICATION_CREDENTIALS is not '
-        'valid JSON', () async {
+    test('throws CredentialException when GOOGLE_APPLICATION_CREDENTIALS is '
+        'not valid JSON', () async {
       final invalidFile = File('${tempDir.path}/invalid.json');
       await invalidFile.writeAsString('not a json file');
 
@@ -136,7 +136,7 @@ void main() {
           },
         ),
         throwsA(
-          isA<SigningException>().having(
+          isA<CredentialException>().having(
             (e) => e.message,
             'message',
             contains('not a valid JSON file'),
@@ -145,8 +145,8 @@ void main() {
       );
     });
 
-    test('throws SigningException when GOOGLE_APPLICATION_CREDENTIALS is not a '
-        'service account', () async {
+    test('throws CredentialException when GOOGLE_APPLICATION_CREDENTIALS is '
+        'not a service account', () async {
       final userFile = File('${tempDir.path}/user_creds.json');
       await userFile.writeAsString(
         jsonEncode({
@@ -167,7 +167,7 @@ void main() {
           },
         ),
         throwsA(
-          isA<SigningException>().having(
+          isA<CredentialException>().having(
             (e) => e.message,
             'message',
             contains("has type 'authorized_user'"),
@@ -198,39 +198,27 @@ void main() {
 
     test('falls back to ComputeEngineCredentials when metadata server is '
         'available', () async {
-      final mockClient = MockClient((request) async {
-        final path = request.url.path;
-        if (path == '/computeMetadata/v1/') {
-          return http.Response(
+      final mockClient = MockClient(
+        (request) async => switch (request.url.path) {
+          '/computeMetadata/v1/' => http.Response(
             'ok',
             200,
             headers: {'metadata-flavor': 'Google'},
-          );
-        }
-        if (path ==
-            '/computeMetadata/v1/instance/service-accounts/default/email') {
-          return http.Response(
-            'gce-sa@project.iam.gserviceaccount.com',
-            200,
-            headers: {'metadata-flavor': 'Google'},
-          );
-        }
-        if (path == '/computeMetadata/v1/project/project-id') {
-          return http.Response(
-            'gce-project',
-            200,
-            headers: {'metadata-flavor': 'Google'},
-          );
-        }
-        if (path == '/computeMetadata/v1/universe/universe-domain') {
-          return http.Response(
+          ),
+          '/computeMetadata/v1/instance/service-accounts/default/email' =>
+            http.Response(
+              'gce-sa@project.iam.gserviceaccount.com',
+              200,
+              headers: {'metadata-flavor': 'Google'},
+            ),
+          '/computeMetadata/v1/universe/universe-domain' => http.Response(
             'googleapis.com',
             200,
             headers: {'metadata-flavor': 'Google'},
-          );
-        }
-        return http.Response('Not found', 404);
-      });
+          ),
+          _ => http.Response('Not found', 404),
+        },
+      );
 
       final signer = await applicationDefaultCredentials(
         client: mockClient,
@@ -242,26 +230,29 @@ void main() {
       expect(signer.clientEmail, 'gce-sa@project.iam.gserviceaccount.com');
     });
 
-    test('throws SigningException when no credentials can be found', () async {
-      final mockClient = MockClient((request) async {
-        throw http.ClientException('Connection refused');
-      });
+    test(
+      'throws CredentialException when no credentials can be found',
+      () async {
+        final mockClient = MockClient((request) async {
+          throw http.ClientException('Connection refused');
+        });
 
-      expect(
-        () => applicationDefaultCredentials(
-          client: mockClient,
-          getEnvironmentVariable: (name) => null,
-          wellKnownFilePath: '${tempDir.path}/non_existent.json',
-        ),
-        throwsA(
-          isA<SigningException>().having(
-            (e) => e.message,
-            'message',
-            contains('Could not load Application Default Credentials'),
+        expect(
+          () => applicationDefaultCredentials(
+            client: mockClient,
+            getEnvironmentVariable: (name) => null,
+            wellKnownFilePath: '${tempDir.path}/non_existent.json',
           ),
-        ),
-      );
-    });
+          throwsA(
+            isA<CredentialException>().having(
+              (e) => e.message,
+              'message',
+              contains('Could not load Application Default Credentials'),
+            ),
+          ),
+        );
+      },
+    );
 
     test(
       'defaultCredentials is an alias for applicationDefaultCredentials',
@@ -287,6 +278,23 @@ void main() {
         expect(signer.clientEmail, 'alias-sa@project.iam.gserviceaccount.com');
       },
       skip: _canUseWebCrypto ? null : 'Requires Dart 3.13 or later',
+    );
+
+    test(
+      'signs message using applicationDefaultCredentials',
+      tags: ['google-cloud'],
+      () async {
+        final signer = await applicationDefaultCredentials();
+        expect(signer.clientEmail, contains('@'));
+
+        final message = utf8.encode(
+          'Hello from applicationDefaultCredentials!',
+        );
+        final signature = await signer.sign(message);
+
+        expect(signature, isNotEmpty);
+        expect(signature.length, greaterThan(64));
+      },
     );
   });
 }

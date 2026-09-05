@@ -20,6 +20,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
 import 'compute_engine_credentials.dart';
+import 'credential_exception.dart';
 import 'service_account_credentials.dart';
 import 'service_account_signer.dart';
 
@@ -39,7 +40,7 @@ import 'service_account_signer.dart';
 /// 3. The Google Compute Engine (or Google Cloud Build / Cloud Run) metadata
 ///    server.
 ///
-/// Throws a [SigningException] if no credentials capable of signing messages
+/// Throws a [CredentialException] if no credentials capable of signing messages
 /// could be found or loaded.
 Future<ServiceAccountSigner> applicationDefaultCredentials({
   http.Client? client,
@@ -55,7 +56,7 @@ Future<ServiceAccountSigner> applicationDefaultCredentials({
   if (envPath != null && envPath.isNotEmpty) {
     final file = File(envPath);
     if (!await file.exists()) {
-      throw SigningException(
+      throw CredentialException(
         'The GOOGLE_APPLICATION_CREDENTIALS environment variable points to a '
         'file that does not exist: $envPath',
       );
@@ -64,10 +65,11 @@ Future<ServiceAccountSigner> applicationDefaultCredentials({
     final String content;
     try {
       content = await file.readAsString();
-    } on FileSystemException catch (e) {
-      throw SigningException(
+    } on FileSystemException catch (e, stackTrace) {
+      throw CredentialException(
         'Failed to read credentials file at $envPath: $e',
-        e,
+        innerException: e,
+        innerStackTrace: stackTrace,
       );
     }
 
@@ -78,10 +80,11 @@ Future<ServiceAccountSigner> applicationDefaultCredentials({
         throw const FormatException('Expected JSON object.');
       }
       json = decoded;
-    } on FormatException catch (e) {
-      throw SigningException(
+    } on FormatException catch (e, stackTrace) {
+      throw CredentialException(
         'The file at $envPath is not a valid JSON file: ${e.message}',
-        e,
+        innerException: e,
+        innerStackTrace: stackTrace,
       );
     }
 
@@ -90,7 +93,7 @@ Future<ServiceAccountSigner> applicationDefaultCredentials({
       return ServiceAccountCredentials.fromServiceAccountInfo(json);
     }
 
-    throw SigningException(
+    throw CredentialException(
       "The credential at '$envPath' has type '$type', which cannot be used to "
       'sign messages. Service account credentials are required.',
     );
@@ -122,7 +125,7 @@ Future<ServiceAccountSigner> applicationDefaultCredentials({
     return await ComputeEngineCredentials.create(client: client);
   }
 
-  throw SigningException(
+  throw CredentialException(
     'Could not load Application Default Credentials. No service account '
     'credentials found in GOOGLE_APPLICATION_CREDENTIALS, the well-known '
     'credentials file, or the Compute Engine metadata server.',
