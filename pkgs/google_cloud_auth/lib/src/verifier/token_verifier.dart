@@ -214,7 +214,7 @@ final class TokenVerifier {
       audience: List.unmodifiable(audience),
       expiry: expiry,
       issuedAt: issuedAt,
-      unverifiedPayload: Map.unmodifiable(payload),
+      allClaims: Map.unmodifiable(payload),
     );
   }
 
@@ -224,11 +224,11 @@ final class TokenVerifier {
 
 /// Validated claims extracted from a verified JWT ID token.
 final class IdTokenClaims {
+
+  // Present on essentially all ID tokens, but not required: neither the Java
+  // nor the Python reference verifier enforces it, and some Google tokens
+  // legitimately omit it.
   /// The `sub` (subject) claim, or `null` if absent.
-  ///
-  /// Present on essentially all ID tokens, but not required: neither the Java
-  /// nor the Python reference verifier enforces it, and some Google tokens
-  /// legitimately omit it.
   final String? subject;
 
   /// The `iss` (issuer) claim, or `null` if absent.
@@ -242,7 +242,7 @@ final class IdTokenClaims {
   /// Empty if the token carries no audience.
   final List<String> audience;
 
-  /// The `exp` (expiration time) claim. Always present.
+  /// The `exp` (expiration time) claim.
   final DateTime expiry;
 
   /// The `iat` (issued at) claim, or `null` if absent.
@@ -253,7 +253,7 @@ final class IdTokenClaims {
   /// The payload as a whole is covered by the verified signature. The name
   /// refers to the individual claims within it that this class did not
   /// itself validate, such as application-specific custom claims.
-  final Map<String, dynamic> unverifiedPayload;
+  final Map<String, dynamic> allClaims;
 
   IdTokenClaims._({
     required this.subject,
@@ -261,18 +261,18 @@ final class IdTokenClaims {
     required this.audience,
     required this.expiry,
     required this.issuedAt,
-    required this.unverifiedPayload,
+    required this.allClaims,
   });
 
   /// The `email` claim, or `null` if absent.
-  String? get email => _optionalString(unverifiedPayload, 'email');
+  String? get email => _optionalString(allClaims, 'email');
 
   /// Whether the `email_verified` claim is set.
   ///
   /// Accepts both the boolean `true` and the string `"true"`, matching the
   /// coercion the Java reference implementation performs.
   bool get isEmailVerified {
-    final value = unverifiedPayload['email_verified'];
+    final value = allClaims['email_verified'];
     return value == true || value == 'true';
   }
 }

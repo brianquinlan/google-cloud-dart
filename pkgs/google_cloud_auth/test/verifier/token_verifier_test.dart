@@ -95,8 +95,8 @@ void main() {
 
         final claims = await buildVerifier().verify(token);
 
-        expect(claims.unverifiedPayload['tenant'], 'acme');
-        expect(claims.unverifiedPayload['roles'], ['admin']);
+        expect(claims.allClaims['tenant'], 'acme');
+        expect(claims.allClaims['roles'], ['admin']);
       });
 
       group('signature', () {
