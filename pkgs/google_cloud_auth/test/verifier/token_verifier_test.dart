@@ -42,13 +42,13 @@ void main() {
     key = await TestKey.generate();
   });
 
-  IdTokenVerifier buildVerifier({
+  TokenVerifier buildVerifier({
     Set<String>? expectedIssuers = const {_issuer},
     Set<String>? allowedAudiences = const {_audience},
-    Duration clockSkewTolerance = IdTokenVerifier.defaultClockSkewTolerance,
+    Duration clockSkewTolerance = TokenVerifier.defaultClockSkewTolerance,
     DateTime? now,
     String? jwksBody,
-  }) => IdTokenVerifier(
+  }) => TokenVerifier(
     jwksUri: _jwksUri,
     expectedIssuers: expectedIssuers,
     allowedAudiences: allowedAudiences,
@@ -464,7 +464,7 @@ void main() {
       });
 
       test('surfaces a key fetch failure as a verification failure', () async {
-        final verifier = IdTokenVerifier(
+        final verifier = TokenVerifier(
           jwksUri: _jwksUri,
           clock: () => _now,
           clientFactory: () =>
@@ -479,7 +479,7 @@ void main() {
       });
 
       test('verifies against a legacy certificate map endpoint', () async {
-        final verifier = IdTokenVerifier(
+        final verifier = TokenVerifier(
           jwksUri: _jwksUri,
           expectedIssuers: const {_issuer},
           allowedAudiences: const {_audience},

@@ -66,7 +66,7 @@ List<String> _audienceList(Object? audience) => switch (audience) {
 /// );
 /// final claims = await verifier.verify(inboundToken);
 /// ```
-final class IdTokenVerifier {
+final class TokenVerifier {
   /// The default tolerance applied to `exp` and `iat` comparisons.
   static const defaultClockSkewTolerance = Duration(minutes: 5);
 
@@ -90,7 +90,7 @@ final class IdTokenVerifier {
   /// removes an important defense against a token minted for a different
   /// service being replayed against this one. Set it unless the audience is
   /// genuinely checked elsewhere.
-  IdTokenVerifier({
+  TokenVerifier({
     required Uri jwksUri,
     Set<String>? expectedIssuers,
     Set<String>? allowedAudiences,
@@ -234,7 +234,7 @@ final class IdTokenClaims {
   /// The `iss` (issuer) claim, or `null` if absent.
   ///
   /// Guaranteed non-null when the verifier was configured with
-  /// [IdTokenVerifier.expectedIssuers].
+  /// [TokenVerifier.expectedIssuers].
   final String? issuer;
 
   /// The `aud` (audience) claim, normalized to a list.
