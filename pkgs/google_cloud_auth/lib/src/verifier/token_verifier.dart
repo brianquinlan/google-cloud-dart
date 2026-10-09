@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Design based on:
+/// - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/googleapis/auth/oauth2/GoogleIdTokenVerifier.java
+/// - https://github.com/googleapis/google-auth-library-python/blob/main/google/oauth2/id_token.py
+library;
+
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
@@ -44,10 +49,6 @@ List<String> _audienceList(Object? audience) => switch (audience) {
   final List<Object?> values => values.whereType<String>().toList(),
   _ => const [],
 };
-
-// Design based on:
-// - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/googleapis/auth/oauth2/GoogleIdTokenVerifier.java
-// - https://github.com/googleapis/google-auth-library-python/blob/main/google/oauth2/id_token.py
 
 /// Validated claims extracted from a verified JWT ID token.
 final class IdTokenClaims {
@@ -179,7 +180,7 @@ final class TokenVerifier {
   Future<IdTokenClaims> verify(String rawToken) async {
     final JwsParts parts;
     try {
-      parts = JwsParts.parseUnverified(rawToken);
+      parts = JwsParts.parse(rawToken);
     } on FormatException catch (e, stackTrace) {
       throw TokenVerificationException(
         'The token is not a well-formed JWS: ${e.message}',

@@ -30,7 +30,7 @@ void main() {
           '.${_segment({'sub': 'user-1', 'exp': 123})}'
           '.${base64UrlUnpadded(const [1, 2, 3])}';
 
-      final parts = JwsParts.parseUnverified(token);
+      final parts = JwsParts.parse(token);
 
       expect(parts.header, {'alg': 'RS256', 'kid': 'abc'});
       expect(parts.payload, {'sub': 'user-1', 'exp': 123});
@@ -44,7 +44,7 @@ void main() {
       final payload = _segment({'sub': 'user-1'});
       final token = '$header.$payload.${base64UrlUnpadded(const [9])}';
 
-      final parts = JwsParts.parseUnverified(token);
+      final parts = JwsParts.parse(token);
 
       expect(ascii.decode(parts.signedContent), '$header.$payload');
     });
@@ -53,7 +53,7 @@ void main() {
       final token =
           '${_segment({'alg': 'none'})}.${_segment({'sub': 'user-1'})}.';
 
-      final parts = JwsParts.parseUnverified(token);
+      final parts = JwsParts.parse(token);
 
       expect(parts.signature, isEmpty);
       expect(parts.algorithm, 'none');
@@ -67,13 +67,13 @@ void main() {
 
       final token = '${_segment({'alg': 'RS256'})}.$encoded.';
 
-      expect(JwsParts.parseUnverified(token).payload, payload);
+      expect(JwsParts.parse(token).payload, payload);
     });
 
     test('algorithm and keyId are null when absent or not strings', () {
       final token = '${_segment({'alg': 123})}.${_segment({'sub': 'user-1'})}.';
 
-      final parts = JwsParts.parseUnverified(token);
+      final parts = JwsParts.parse(token);
 
       expect(parts.algorithm, isNull);
       expect(parts.keyId, isNull);
@@ -82,7 +82,7 @@ void main() {
     group('rejects', () {
       test('a token with too few segments', () {
         expect(
-          () => JwsParts.parseUnverified('only-one'),
+          () => JwsParts.parse('only-one'),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
@@ -92,7 +92,7 @@ void main() {
           ),
         );
         expect(
-          () => JwsParts.parseUnverified('one.two'),
+          () => JwsParts.parse('one.two'),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
@@ -105,21 +105,21 @@ void main() {
 
       test('a token with too many segments', () {
         expect(
-          () => JwsParts.parseUnverified('a.b.c.d'),
+          () => JwsParts.parse('a.b.c.d'),
           throwsA(isA<FormatException>()),
         );
       });
 
       test('an empty string', () {
         expect(
-          () => JwsParts.parseUnverified(''),
+          () => JwsParts.parse(''),
           throwsA(isA<FormatException>()),
         );
       });
 
       test('a segment that is not base64url', () {
         expect(
-          () => JwsParts.parseUnverified('!!!.${_segment({'a': 1})}.'),
+          () => JwsParts.parse('!!!.${_segment({'a': 1})}.'),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
@@ -133,7 +133,7 @@ void main() {
       test('a segment that is not JSON', () {
         final notJson = base64UrlUnpadded(utf8.encode('not json'));
         expect(
-          () => JwsParts.parseUnverified('$notJson.${_segment({'a': 1})}.'),
+          () => JwsParts.parse('$notJson.${_segment({'a': 1})}.'),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
@@ -146,7 +146,7 @@ void main() {
 
       test('a segment that is JSON but not an object', () {
         expect(
-          () => JwsParts.parseUnverified(
+          () => JwsParts.parse(
             '${_segment([1, 2])}.'
             '${_segment({'a': 1})}.',
           ),

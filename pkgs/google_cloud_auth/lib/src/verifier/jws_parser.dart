@@ -23,7 +23,6 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 
-/// Decodes an unpadded base64url [segment] named [name].
 Uint8List _decodeBase64Url(String segment, String name) {
   try {
     return base64Url.decode(base64Url.normalize(segment));
@@ -32,7 +31,6 @@ Uint8List _decodeBase64Url(String segment, String name) {
   }
 }
 
-/// Decodes an unpadded base64url [segment] containing a UTF-8 JSON object.
 Map<String, Object?> _decodeJsonSegment(String segment, String name) {
   final bytes = _decodeBase64Url(segment, name);
 
@@ -49,7 +47,6 @@ Map<String, Object?> _decodeJsonSegment(String segment, String name) {
   return decoded;
 }
 
-/// Reads [name] from [json], returning `null` if absent or not a [String].
 String? _optionalString(Map<String, Object?> json, String name) {
   final value = json[name];
   return value is String ? value : null;
@@ -58,7 +55,7 @@ String? _optionalString(Map<String, Object?> json, String name) {
 /// The decoded parts of a JSON Web Signature (JWS) in compact serialization,
 /// as defined by [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515).
 ///
-/// Instances are produced by [JwsParts.parseUnverified], which performs **no**
+/// Instances are produced by [JwsParts.parse], which performs **no**
 /// cryptographic verification. Treat the contents as untrusted input unless
 /// the token has separately been verified.
 @internal
@@ -99,42 +96,23 @@ final class JwsParts {
   /// The `kid` (key ID) header parameter, or `null` if absent.
   String? get keyId => _optionalString(header, 'kid');
 
-  /// Splits and decodes [token] **without verifying its signature**.
+  /// Parse a JWS in compact serialization.
   ///
-  /// Use this only where a signature check is deliberately not wanted, such as
-  /// against a local emulator, for a request already authenticated by another
-  /// mechanism, or to inspect a claim in order to produce a better error
-  /// message before verifying.
-  ///
-  /// Throws a [FormatException] if [token] is not a well-formed JWS.
-  static JwsParts parseUnverified(String token) {
-    final firstDot = token.indexOf('.');
-    if (firstDot == -1) {
-      throw const FormatException(
-        'The JWS is malformed: expected 3 "." separated segments, found 1.',
+  /// See [RFC 7515 § 3.3](https://datatracker.ietf.org/doc/html/rfc7515#section-3.3).
+  static JwsParts parse(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      throw FormatException(
+        'The JWS is malformed: expected 3 "." separated segments, '
+        ' found ${parts.length}',
       );
     }
-    final secondDot = token.indexOf('.', firstDot + 1);
-    if (secondDot == -1) {
-      throw const FormatException(
-        'The JWS is malformed: expected 3 "." separated segments, found 2.',
-      );
-    }
-    if (token.indexOf('.', secondDot + 1) != -1) {
-      throw const FormatException(
-        'The JWS is malformed: expected 3 "." separated segments, found more.',
-      );
-    }
-
-    final headerSegment = token.substring(0, firstDot);
-    final payloadSegment = token.substring(firstDot + 1, secondDot);
-    final signatureSegment = token.substring(secondDot + 1);
 
     return JwsParts._(
-      header: _decodeJsonSegment(headerSegment, 'header'),
-      payload: _decodeJsonSegment(payloadSegment, 'payload'),
-      signature: _decodeBase64Url(signatureSegment, 'signature'),
-      signedContent: ascii.encode(token.substring(0, secondDot)),
+      header: _decodeJsonSegment(parts[0], 'header'),
+      payload: _decodeJsonSegment(parts[1], 'payload'),
+      signature: _decodeBase64Url(parts[2], 'signature'),
+      signedContent: ascii.encode(token.substring(0, token.lastIndexOf('.'))),
     );
   }
 }
