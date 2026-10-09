@@ -24,5 +24,5 @@ export 'src/google_credentials.dart';
 export 'src/jwt/jws_parser.dart';
 export 'src/service_account_credentials.dart';
 export 'src/service_account_signer.dart';
-export 'src/verifier/id_token_verifier.dart';
 export 'src/verifier/token_verification_exception.dart';
+export 'src/verifier/token_verifier.dart';
