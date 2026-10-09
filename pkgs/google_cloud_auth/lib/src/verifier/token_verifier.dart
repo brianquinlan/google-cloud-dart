@@ -17,7 +17,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import '../jwks/jwks_cache.dart';
-import '../jwt/jws_parser.dart';
+import 'jws_parser.dart';
 import 'token_verification_exception.dart';
 
 /// The only signature algorithm this package accepts.
