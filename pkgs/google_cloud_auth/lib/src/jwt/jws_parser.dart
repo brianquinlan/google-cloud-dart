@@ -15,6 +15,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
 /// Decodes an unpadded base64url [segment] named [name].
 Uint8List _decodeBase64Url(String segment, String name) {
   try {
@@ -57,6 +59,7 @@ String? _optionalString(Map<String, dynamic> json, String name) {
 /// Instances are produced by [JwsParts.parseUnverified], which performs **no**
 /// cryptographic verification. Treat the contents as untrusted input unless
 /// the token has separately been verified.
+@internal
 final class JwsParts {
   /// The decoded JOSE header.
   final Map<String, dynamic> header;

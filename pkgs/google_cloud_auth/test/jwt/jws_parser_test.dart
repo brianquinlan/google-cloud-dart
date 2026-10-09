@@ -14,7 +14,7 @@
 
 import 'dart:convert';
 
-import 'package:google_cloud_auth/google_cloud_auth.dart';
+import 'package:google_cloud_auth/src/jwt/jws_parser.dart';
 import 'package:test/test.dart';
 
 import '../src/test_support.dart';

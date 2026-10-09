@@ -21,7 +21,6 @@ export 'src/application_default_credentials.dart'
 export 'src/compute_engine_credentials.dart' hide internalIsOnComputeEngine;
 export 'src/credential_exception.dart';
 export 'src/google_credentials.dart';
-export 'src/jwt/jws_parser.dart';
 export 'src/service_account_credentials.dart';
 export 'src/service_account_signer.dart';
 export 'src/verifier/token_verification_exception.dart';

@@ -224,7 +224,6 @@ final class TokenVerifier {
 
 /// Validated claims extracted from a verified JWT ID token.
 final class IdTokenClaims {
-
   // Present on essentially all ID tokens, but not required: neither the Java
   // nor the Python reference verifier enforces it, and some Google tokens
   // legitimately omit it.
