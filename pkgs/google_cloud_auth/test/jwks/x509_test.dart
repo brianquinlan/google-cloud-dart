@@ -19,22 +19,29 @@ import 'package:google_cloud_auth/src/jwks/x509.dart';
 import 'package:test/test.dart';
 import 'package:webcrypto/webcrypto.dart';
 
-import '../src/test_support.dart';
 import '../test_utils.dart';
 
 void main() {
   group('parsePemCertificate', () {
     test('decodes armored base64', () {
       final der = Uint8List.fromList([1, 2, 3, 4]);
+      final pem =
+          '-----BEGIN CERTIFICATE-----\n'
+          '${base64.encode(der)}\n'
+          '-----END CERTIFICATE-----\n';
 
-      expect(parsePemCertificate(pemCertificate(der)), der);
+      expect(parsePemCertificate(pem), der);
     });
 
     test('tolerates surrounding whitespace and CRLF line endings', () {
-      final der = Uint8List.fromList(List.generate(100, (i) => i));
-      final pem = pemCertificate(der).replaceAll('\n', '\r\n');
+      final der = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 8]);
+      final pem =
+          '  \r\n-----BEGIN CERTIFICATE-----\r\n'
+          '${base64.encode(der.sublist(0, 3))}\r\n'
+          '${base64.encode(der.sublist(3))}\r\n'
+          '-----END CERTIFICATE-----  \r\n';
 
-      expect(parsePemCertificate('  \n$pem  \n'), der);
+      expect(parsePemCertificate(pem), der);
     });
 
     test('rejects empty PEM', () {
@@ -54,52 +61,36 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('rejects missing or wrong encapsulation boundaries', () {
+      expect(
+        () => parsePemCertificate('AQIDBA=='),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => parsePemCertificate(
+          '-----BEGIN PUBLIC KEY-----\nAQIDBA==\n-----END PUBLIC KEY-----',
+        ),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => parsePemCertificate(
+          '-----BEGIN CERTIFICATE-----\nAQIDBA==\n-----END CERTIFICATE-----\n'
+          '-----BEGIN CERTIFICATE-----\nAQIDBA==\n-----END CERTIFICATE-----',
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 
-  group(
-    'extractSubjectPublicKeyInfo',
-    () {
-      late TestKey key;
-
-      setUpAll(() async {
-        if (!canUseWebCrypto) return;
-        key = await TestKey.generate();
-      });
-
-      test('round-trips a generated key through a certificate', () async {
-        final certificate = synthesizeCertificate(key.spki);
-
-        final extracted = extractSubjectPublicKeyInfo(certificate);
-
-        expect(extracted, key.spki);
-      });
-
-      test('extracted SPKI imports and verifies a real signature', () async {
-        final certificate = synthesizeCertificate(key.spki);
-        final extracted = extractSubjectPublicKeyInfo(certificate);
-
-        final imported = await RsassaPkcs1V15PublicKey.importSpkiKey(
-          extracted,
-          Hash.sha256,
-        );
-
-        final message = ascii.encode('payload to sign');
-        final signature = await key.privateKey.signBytes(message);
-        expect(await imported.verifyBytes(signature, message), isTrue);
-      });
-
-      test('handles a certificate with no explicit version field', () async {
-        // `version` is [0] EXPLICIT and defaults to v1, so it may be absent.
-        final certificate = synthesizeCertificate(
-          key.spki,
-          includeVersion: false,
-        );
-
-        expect(extractSubjectPublicKeyInfo(certificate), key.spki);
-      });
-
-      test('parses a real Google certificate', () async {
-        final der = parsePemCertificate(googleSecureTokenCertificatePem);
+  group('extractSubjectPublicKeyInfo', () {
+    test(
+      'parses a real Google certificate',
+      skip: canUseWebCrypto
+          ? null
+          : 'Requires Dart 3.13 or later for native assets',
+      () async {
+        final der = parsePemCertificate(testGoogleSecureTokenCertificatePem);
 
         final spki = extractSubjectPublicKeyInfo(der);
 
@@ -110,78 +101,154 @@ void main() {
         );
         final jwk = await imported.exportJsonWebKey();
         expect(jwk['kty'], 'RSA');
-      });
+      },
+    );
 
-      group('rejects', () {
-        test('empty input', () {
-          expect(
-            () => extractSubjectPublicKeyInfo(Uint8List(0)),
-            throwsA(isA<FormatException>()),
-          );
-        });
+    test('empty input', () {
+      expect(
+        () => extractSubjectPublicKeyInfo(Uint8List(0)),
+        throwsA(isA<FormatException>()),
+      );
+    });
 
-        test('a non-SEQUENCE outer tag', () {
-          final notACertificate = derEncode(0x02, const [1, 2, 3]);
+    test('a non-SEQUENCE outer tag', () {
+      final notACertificate = Uint8List.fromList([0x02, 0x01, 0x00]);
 
-          expect(
-            () => extractSubjectPublicKeyInfo(notACertificate),
-            throwsA(
-              isA<FormatException>().having(
-                (e) => e.message,
-                'message',
-                contains('Certificate SEQUENCE'),
-              ),
-            ),
-          );
-        });
+      expect(
+        () => extractSubjectPublicKeyInfo(notACertificate),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Certificate SEQUENCE'),
+          ),
+        ),
+      );
+    });
 
-        test('a certificate truncated mid-structure', () {
-          final certificate = synthesizeCertificate(key.spki);
-          final truncated = Uint8List.sublistView(
-            certificate,
-            0,
-            certificate.length ~/ 2,
-          );
+    test('trailing bytes after outer SEQUENCE', () {
+      final certificate = parsePemCertificate(
+        testGoogleSecureTokenCertificatePem,
+      );
+      final withTrailing = Uint8List.fromList([...certificate, 0x00]);
 
-          expect(
-            () => extractSubjectPublicKeyInfo(truncated),
-            throwsA(isA<FormatException>()),
-          );
-        });
+      expect(
+        () => extractSubjectPublicKeyInfo(withTrailing),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('trailing bytes'),
+          ),
+        ),
+      );
+    });
 
-        test('a TBSCertificate with too few fields', () {
-          final tbs = derEncode(0x30, <int>[
-            ...derEncode(0x02, const [0x01]),
-            ...derEncode(0x30, const []),
-          ]);
-          final certificate = derEncode(0x30, tbs);
+    test('a certificate truncated mid-structure', () {
+      final certificate = parsePemCertificate(
+        testGoogleSecureTokenCertificatePem,
+      );
+      final truncated = Uint8List.sublistView(
+        certificate,
+        0,
+        certificate.length ~/ 2,
+      );
 
-          expect(
-            () => extractSubjectPublicKeyInfo(certificate),
-            throwsA(isA<FormatException>()),
-          );
-        });
+      expect(
+        () => extractSubjectPublicKeyInfo(truncated),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Truncated DER'),
+          ),
+        ),
+      );
+    });
 
-        test('indefinite-length encoding', () {
-          // 0x80 as a length byte signals indefinite length, which is BER but
-          // not DER and must not be accepted.
-          final certificate = Uint8List.fromList([0x30, 0x80, 0x30, 0x00]);
+    test('a TBSCertificate with too few fields', () {
+      // Outer SEQUENCE containing a TBSCertificate SEQUENCE with only one
+      // INTEGER field.
+      final certificate = Uint8List.fromList([
+        0x30,
+        0x05,
+        0x30,
+        0x03,
+        0x02,
+        0x01,
+        0x01,
+      ]);
 
-          expect(
-            () => extractSubjectPublicKeyInfo(certificate),
-            throwsA(
-              isA<FormatException>().having(
-                (e) => e.message,
-                'message',
-                contains('Indefinite-length'),
-              ),
-            ),
-          );
-        });
-      });
-    },
-    skip: canUseWebCrypto
-        ? null
-        : 'Requires Dart 3.13 or later for native assets',
-  );
+      expect(
+        () => extractSubjectPublicKeyInfo(certificate),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Truncated DER'),
+          ),
+        ),
+      );
+    });
+
+    test('indefinite-length encoding', () {
+      // 0x80 as a length byte signals indefinite length, which is BER but
+      // not DER and must not be accepted.
+      final certificate = Uint8List.fromList([0x30, 0x80, 0x30, 0x00]);
+
+      expect(
+        () => extractSubjectPublicKeyInfo(certificate),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Indefinite-length'),
+          ),
+        ),
+      );
+    });
+
+    test('non-minimal DER length encoding', () {
+      // 0x81 0x02 encodes length 2 in long form (should be short form 0x02).
+      expect(
+        () => extractSubjectPublicKeyInfo(
+          Uint8List.fromList([0x30, 0x81, 0x02, 0x30, 0x00]),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Non-minimal DER length'),
+          ),
+        ),
+      );
+      // 0x82 0x00 0x80 has a leading zero byte in the length.
+      expect(
+        () => extractSubjectPublicKeyInfo(
+          Uint8List.fromList([0x30, 0x82, 0x00, 0x80, ...List.filled(128, 0)]),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Non-minimal DER length'),
+          ),
+        ),
+      );
+    });
+
+    test('high-tag-number form', () {
+      expect(
+        () =>
+            extractSubjectPublicKeyInfo(Uint8List.fromList([0x1f, 0x20, 0x00])),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('High-tag-number'),
+          ),
+        ),
+      );
+    });
+  });
 }

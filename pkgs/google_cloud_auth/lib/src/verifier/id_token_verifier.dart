@@ -128,7 +128,6 @@ final class IdTokenVerifier {
       parts = JwsParts.parseUnverified(rawToken);
     } on FormatException catch (e, stackTrace) {
       throw TokenVerificationException(
-        TokenVerificationFailure.malformed,
         'The token is not a well-formed JWS: ${e.message}',
         innerException: e,
         innerStackTrace: stackTrace,
@@ -140,7 +139,6 @@ final class IdTokenVerifier {
     // rejects unsecured (`"alg": "none"`) tokens.
     if (parts.algorithm != _requiredAlgorithm) {
       throw TokenVerificationException(
-        TokenVerificationFailure.unsupportedAlgorithm,
         'The token algorithm must be "$_requiredAlgorithm", '
         'but was "${parts.algorithm}".',
       );
@@ -149,7 +147,6 @@ final class IdTokenVerifier {
     final keyId = parts.keyId;
     if (keyId == null) {
       throw TokenVerificationException(
-        TokenVerificationFailure.missingKeyId,
         'The token has no "kid" (key ID) header parameter.',
       );
     }
@@ -157,17 +154,13 @@ final class IdTokenVerifier {
     final key = await _jwksCache.lookupKey(keyId);
     if (key == null) {
       throw TokenVerificationException(
-        TokenVerificationFailure.unknownKeyId,
         'The token "kid" ("$keyId") does not match any key published by '
         '$jwksUri. The signing keys may have rotated.',
       );
     }
 
     if (!await key.verifyBytes(parts.signature, parts.signedContent)) {
-      throw TokenVerificationException(
-        TokenVerificationFailure.invalidSignature,
-        'The token signature is invalid.',
-      );
+      throw TokenVerificationException('The token signature is invalid.');
     }
 
     return _verifyClaims(parts.payload);
@@ -179,7 +172,6 @@ final class IdTokenVerifier {
     if (expectedIssuers != null &&
         (issuer == null || !expectedIssuers.contains(issuer))) {
       throw TokenVerificationException(
-        TokenVerificationFailure.invalidIssuer,
         'The token "iss" (issuer) claim is "$issuer", but one of '
         '${expectedIssuers.join(', ')} was expected.',
       );
@@ -189,7 +181,6 @@ final class IdTokenVerifier {
     final allowedAudiences = this.allowedAudiences;
     if (allowedAudiences != null && !audience.any(allowedAudiences.contains)) {
       throw TokenVerificationException(
-        TokenVerificationFailure.invalidAudience,
         'The token "aud" (audience) claim is ${audience.join(', ')}, but one '
         'of ${allowedAudiences.join(', ')} was expected.',
       );
@@ -200,24 +191,19 @@ final class IdTokenVerifier {
     final expiry = _timestamp(payload, 'exp');
     if (expiry == null) {
       throw TokenVerificationException(
-        TokenVerificationFailure.missingExpiration,
         'The token has no "exp" (expiration time) claim.',
       );
     }
 
     final now = _clock();
     if (!now.isBefore(expiry.add(clockSkewTolerance))) {
-      throw TokenVerificationException(
-        TokenVerificationFailure.expired,
-        'The token expired at $expiry.',
-      );
+      throw TokenVerificationException('The token expired at $expiry.');
     }
 
     final issuedAt = _timestamp(payload, 'iat');
     if (issuedAt != null &&
         now.isBefore(issuedAt.subtract(clockSkewTolerance))) {
       throw TokenVerificationException(
-        TokenVerificationFailure.issuedInFuture,
         'The token was issued at $issuedAt, which is in the future.',
       );
     }

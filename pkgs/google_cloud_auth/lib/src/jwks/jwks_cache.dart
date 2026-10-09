@@ -29,7 +29,14 @@ import 'x509.dart';
 /// Used when the response carries no usable freshness information.
 const _defaultCacheDuration = Duration(hours: 1);
 
-final _maxAgePattern = RegExp(r'(?:^|[,\s])max-age\s*=\s*"?(\d+)"?');
+/// Maximum delta-seconds value (2^31 - 1, ~68 years), per
+/// [RFC 9111 §1.2.2](https://datatracker.ietf.org/doc/html/rfc9111#section-1.2.2).
+const _maxDeltaSeconds = 0x7fffffff;
+
+final _noCachePattern = RegExp(r'(?:^|[,\s])no-(?:store|cache)(?:$|[,\s=])');
+final _maxAgePattern = RegExp(
+  r'(?:^|[,\s])max-age\s*=\s*(?:"(\d+)"|(\d+))(?:$|[,\s])',
+);
 
 /// Computes how long a response may be treated as fresh.
 ///
@@ -43,18 +50,18 @@ Duration? freshnessLifetime(Map<String, String> headers) {
   final cacheControl = headers['cache-control']?.toLowerCase();
   if (cacheControl == null) return null;
 
-  if (cacheControl.contains('no-store') || cacheControl.contains('no-cache')) {
-    return Duration.zero;
-  }
+  if (_noCachePattern.hasMatch(cacheControl)) return .zero;
 
   final match = _maxAgePattern.firstMatch(cacheControl);
   if (match == null) return null;
 
-  final maxAge = int.tryParse(match.group(1)!);
-  if (maxAge == null) return null;
+  final digits = match.group(1) ?? match.group(2)!;
+  final maxAge =
+      int.tryParse(digits)?.clamp(0, _maxDeltaSeconds) ?? _maxDeltaSeconds;
 
-  final age = int.tryParse(headers['age'] ?? '') ?? 0;
-  final seconds = maxAge - (age > 0 ? age : 0);
+  final age =
+      int.tryParse(headers['age'] ?? '')?.clamp(0, _maxDeltaSeconds) ?? 0;
+  final seconds = maxAge - age;
   return seconds > 0 ? Duration(seconds: seconds) : Duration.zero;
 }
 
@@ -86,15 +93,17 @@ final class JwksCache {
   /// The in-flight fetch, so that concurrent callers share one request.
   Future<Map<String, RsassaPkcs1V15PublicKey>>? _activeFetch;
 
+  /// Creates a new [JwksCache] backed by the given [uri].
+  ///
+  /// If provided, [clientFactory] will be used to fetch the keys at [uri].
+  /// [JwksCache] may call [clientFactory] many times and will `close` the
+  /// returned [http.Client]s.
   JwksCache({
     required this.uri,
     FutureOr<http.Client> Function()? clientFactory,
     DateTime Function()? clock,
   }) : _clientFactory = clientFactory ?? http.Client.new,
        _clock = clock ?? DateTime.now;
-
-  /// When the currently cached keys go stale, or `null` if nothing is cached.
-  DateTime? get expiry => _expiry;
 
   /// Returns the key identified by [keyId], or `null` if the endpoint does
   /// not publish it.
@@ -105,13 +114,16 @@ final class JwksCache {
   /// arbitrary `kid`.
   ///
   /// Throws [TokenVerificationException] if the keys cannot be fetched.
-  Future<RsassaPkcs1V15PublicKey?> lookupKey(String keyId) async =>
-      (_freshKeys() ?? await _fetch())[keyId];
+  FutureOr<RsassaPkcs1V15PublicKey?> lookupKey(String keyId) {
+    if (_freshKeys() case final fresh?) return fresh[keyId];
+    return _fetch().then((keys) => keys[keyId]);
+  }
 
   /// Discards any cached keys and fetches a new set.
   ///
   /// Throws [TokenVerificationException] if the keys cannot be fetched.
   Future<void> refresh() async {
+    keys = null;
     _expiry = null;
     await _fetch();
   }
@@ -123,16 +135,10 @@ final class JwksCache {
     return _clock().isBefore(expiry) ? keys : null;
   }
 
-  Future<Map<String, RsassaPkcs1V15PublicKey>> _fetch() {
-    final activeFetch = _activeFetch;
-    if (activeFetch != null) return activeFetch;
-
-    final fetch = _fetchKeys().whenComplete(() {
-      _activeFetch = null;
-    });
-    _activeFetch = fetch;
-    return fetch;
-  }
+  Future<Map<String, RsassaPkcs1V15PublicKey>> _fetch() =>
+      _activeFetch ??= _fetchKeys().whenComplete(() {
+        _activeFetch = null;
+      });
 
   Future<Map<String, RsassaPkcs1V15PublicKey>> _fetchKeys() async {
     final http.Response response;
@@ -145,7 +151,6 @@ final class JwksCache {
       }
     } on Exception catch (e, stackTrace) {
       throw TokenVerificationException(
-        TokenVerificationFailure.keyUnavailable,
         'Failed to fetch public keys from $uri: $e',
         innerException: e,
         innerStackTrace: stackTrace,
@@ -154,7 +159,6 @@ final class JwksCache {
 
     if (response.statusCode != 200) {
       throw TokenVerificationException(
-        TokenVerificationFailure.keyUnavailable,
         'Failed to fetch public keys from $uri: '
         'HTTP ${response.statusCode} ${response.body}',
       );
@@ -174,7 +178,6 @@ final class JwksCache {
       json = jsonDecode(body);
     } on FormatException catch (e, stackTrace) {
       throw TokenVerificationException(
-        TokenVerificationFailure.keyUnavailable,
         'Public keys from $uri are not valid JSON: ${e.message}',
         innerException: e,
         innerStackTrace: stackTrace,
@@ -183,19 +186,18 @@ final class JwksCache {
 
     if (json is! Map<String, dynamic>) {
       throw TokenVerificationException(
-        TokenVerificationFailure.keyUnavailable,
         'Public keys from $uri are not a JSON object.',
       );
     }
 
     final keys = switch (json['keys']) {
-      final List<dynamic> jwks => await _parseJwks(jwks),
-      _ => await _parseCertificateMap(json),
+      final List<Object?> jwks => await _parseJwks(jwks),
+      null when !json.containsKey('keys') => await _parseCertificateMap(json),
+      _ => <String, RsassaPkcs1V15PublicKey>{},
     };
 
     if (keys.isEmpty) {
       throw TokenVerificationException(
-        TokenVerificationFailure.keyUnavailable,
         'Public keys from $uri contained no usable RSA keys.',
       );
     }
@@ -206,7 +208,7 @@ final class JwksCache {
   ///
   /// See [RFC 7517 § 4](https://datatracker.ietf.org/doc/html/rfc7517#section-4).
   Future<Map<String, RsassaPkcs1V15PublicKey>> _parseJwks(
-    List<dynamic> jwks,
+    List<Object?> jwks,
   ) async {
     final keys = <String, RsassaPkcs1V15PublicKey>{};
     for (final entry in jwks) {

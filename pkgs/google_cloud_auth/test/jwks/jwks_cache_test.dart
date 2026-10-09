@@ -15,16 +15,18 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:google_cloud_auth/src/jwks/jwks_cache.dart';
+import 'package:google_cloud_auth/src/verifier/token_verification_exception.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:test/test.dart';
 
-import '../src/test_support.dart';
 import '../test_utils.dart';
 
 final _jwksUri = Uri.https('example.com', '/certs');
+const _keyId = 'test-key-1';
+
+late Map<String, Object?> _jwk;
 
 /// A clock the test advances explicitly.
 final class FakeClock {
@@ -36,12 +38,16 @@ final class FakeClock {
 }
 
 void main() {
-  late TestKey key;
   late FakeClock clock;
 
   setUpAll(() async {
     if (!canUseWebCrypto) return;
-    key = await TestKey.generate();
+    _jwk = {
+      ...await (await getTestPublicKey()).exportJsonWebKey(),
+      'kid': _keyId,
+      'alg': 'RS256',
+      'use': 'sig',
+    };
   });
 
   setUp(() {
@@ -109,8 +115,26 @@ void main() {
       expect(freshnessLifetime({'cache-control': 'public'}), isNull);
     });
 
-    test('does not match max-age inside another directive', () {
+    test('does not match max-age or no-cache inside another directive', () {
       expect(freshnessLifetime({'cache-control': 's-maxage=600'}), isNull);
+      expect(
+        freshnessLifetime({'cache-control': 'x-no-cache=1, max-age=60'}),
+        const Duration(seconds: 60),
+      );
+    });
+
+    test('ignores malformed max-age values', () {
+      expect(freshnessLifetime({'cache-control': 'max-age=120abc'}), isNull);
+      expect(freshnessLifetime({'cache-control': 'max-age="120'}), isNull);
+    });
+
+    test('clamps extreme max-age values to 2^31 - 1 seconds', () {
+      expect(
+        freshnessLifetime({
+          'cache-control': 'max-age=999999999999999999999999999',
+        }),
+        const Duration(seconds: 0x7fffffff),
+      );
     });
   });
 
@@ -119,10 +143,15 @@ void main() {
     () {
       test('fetches and returns a key by id', () async {
         final (:cache, :requests) = buildCache(
-          (_) => http.Response(key.jwksJson(), 200),
+          (_) => http.Response(
+            jsonEncode({
+              'keys': [_jwk],
+            }),
+            200,
+          ),
         );
 
-        expect(await cache.lookupKey(key.keyId), isNotNull);
+        expect(await cache.lookupKey(_keyId), isNotNull);
         expect(requests, hasLength(1));
         expect(requests.single.url, _jwksUri);
       });
@@ -130,15 +159,17 @@ void main() {
       test('serves later lookups from cache', () async {
         final (:cache, :requests) = buildCache(
           (_) => http.Response(
-            key.jwksJson(),
+            jsonEncode({
+              'keys': [_jwk],
+            }),
             200,
             headers: {'cache-control': 'max-age=3600'},
           ),
         );
 
-        await cache.lookupKey(key.keyId);
-        await cache.lookupKey(key.keyId);
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
+        await cache.lookupKey(_keyId);
+        await cache.lookupKey(_keyId);
 
         expect(requests, hasLength(1));
       });
@@ -146,50 +177,59 @@ void main() {
       test('re-fetches once the max-age has elapsed', () async {
         final (:cache, :requests) = buildCache(
           (_) => http.Response(
-            key.jwksJson(),
+            jsonEncode({
+              'keys': [_jwk],
+            }),
             200,
             headers: {'cache-control': 'max-age=600'},
           ),
         );
 
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         clock.advance(const Duration(seconds: 599));
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         expect(requests, hasLength(1));
 
         clock.advance(const Duration(seconds: 2));
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         expect(requests, hasLength(2));
       });
 
       test('Age shortens the cache lifetime', () async {
         final (:cache, :requests) = buildCache(
           (_) => http.Response(
-            key.jwksJson(),
+            jsonEncode({
+              'keys': [_jwk],
+            }),
             200,
             headers: {'cache-control': 'max-age=600', 'age': '540'},
           ),
         );
 
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         clock.advance(const Duration(seconds: 61));
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
 
         expect(requests, hasLength(2));
       });
 
       test('falls back to a one hour lifetime with no cache headers', () async {
         final (:cache, :requests) = buildCache(
-          (_) => http.Response(key.jwksJson(), 200),
+          (_) => http.Response(
+            jsonEncode({
+              'keys': [_jwk],
+            }),
+            200,
+          ),
         );
 
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         clock.advance(const Duration(minutes: 59));
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         expect(requests, hasLength(1));
 
         clock.advance(const Duration(minutes: 2));
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         expect(requests, hasLength(2));
       });
 
@@ -198,11 +238,18 @@ void main() {
         final (:cache, :requests) = buildCache((_) => completer.future);
 
         final lookups = Future.wait([
-          cache.lookupKey(key.keyId),
-          cache.lookupKey(key.keyId),
-          cache.lookupKey(key.keyId),
+          Future.value(cache.lookupKey(_keyId)),
+          Future.value(cache.lookupKey(_keyId)),
+          Future.value(cache.lookupKey(_keyId)),
         ]);
-        completer.complete(http.Response(key.jwksJson(), 200));
+        completer.complete(
+          http.Response(
+            jsonEncode({
+              'keys': [_jwk],
+            }),
+            200,
+          ),
+        );
 
         expect(await lookups, everyElement(isNotNull));
         expect(requests, hasLength(1));
@@ -212,13 +259,15 @@ void main() {
         test('does not trigger a fetch while the cache is fresh', () async {
           final (:cache, :requests) = buildCache(
             (_) => http.Response(
-              key.jwksJson(),
+              jsonEncode({
+                'keys': [_jwk],
+              }),
               200,
               headers: {'cache-control': 'max-age=3600'},
             ),
           );
 
-          expect(await cache.lookupKey(key.keyId), isNotNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
           expect(await cache.lookupKey('never-existed'), isNull);
           expect(await cache.lookupKey('also-never-existed'), isNull);
 
@@ -228,7 +277,9 @@ void main() {
         test('returns null from a cold cache after a single fetch', () async {
           final (:cache, :requests) = buildCache(
             (_) => http.Response(
-              key.jwksJson(),
+              jsonEncode({
+                'keys': [_jwk],
+              }),
               200,
               headers: {'cache-control': 'max-age=3600'},
             ),
@@ -239,24 +290,31 @@ void main() {
         });
 
         test('rotated keys are picked up once the cache expires', () async {
-          final rotated = await TestKey.generate(keyId: 'rotated-key');
           var fetchCount = 0;
           final (:cache, :requests) = buildCache((_) async {
             // Serve the original key first, the rotated key afterwards.
             fetchCount++;
             return http.Response(
-              fetchCount == 1 ? key.jwksJson() : rotated.jwksJson(),
+              fetchCount == 1
+                  ? jsonEncode({
+                      'keys': [_jwk],
+                    })
+                  : jsonEncode({
+                      'keys': [
+                        {..._jwk, 'kid': 'rotated-key'},
+                      ],
+                    }),
               200,
               headers: {'cache-control': 'max-age=3600'},
             );
           });
 
-          expect(await cache.lookupKey(key.keyId), isNotNull);
-          expect(await cache.lookupKey(rotated.keyId), isNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
+          expect(await cache.lookupKey('rotated-key'), isNull);
           expect(requests, hasLength(1));
 
           clock.advance(const Duration(hours: 1));
-          expect(await cache.lookupKey(rotated.keyId), isNotNull);
+          expect(await cache.lookupKey('rotated-key'), isNotNull);
           expect(requests, hasLength(2));
         });
       });
@@ -271,11 +329,11 @@ void main() {
             );
 
             await expectLater(
-              cache.lookupKey(key.keyId),
+              cache.lookupKey(_keyId),
               throwsA(isA<TokenVerificationException>()),
             );
             await expectLater(
-              cache.lookupKey(key.keyId),
+              cache.lookupKey(_keyId),
               throwsA(isA<TokenVerificationException>()),
             );
 
@@ -288,16 +346,21 @@ void main() {
           final (:cache, :requests) = buildCache(
             (_) => fail
                 ? http.Response('nope', 404)
-                : http.Response(key.jwksJson(), 200),
+                : http.Response(
+                    jsonEncode({
+                      'keys': [_jwk],
+                    }),
+                    200,
+                  ),
           );
 
           await expectLater(
-            cache.lookupKey(key.keyId),
+            cache.lookupKey(_keyId),
             throwsA(isA<TokenVerificationException>()),
           );
 
           fail = false;
-          expect(await cache.lookupKey(key.keyId), isNotNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
           expect(requests, hasLength(2));
         });
       });
@@ -305,17 +368,21 @@ void main() {
       group('parsing', () {
         test('reads the legacy certificate map format', () async {
           final (:cache, requests: _) = buildCache(
-            (_) => http.Response(key.certificateMapJson(), 200),
+            (_) => http.Response(
+              jsonEncode({_keyId: testGoogleSecureTokenCertificatePem}),
+              200,
+            ),
           );
 
-          expect(await cache.lookupKey(key.keyId), isNotNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
         });
 
         test('skips non-RSA keys but keeps usable ones', () async {
           final (:cache, requests: _) = buildCache(
             (_) => http.Response(
-              key.jwksJson(
-                alsoInclude: [
+              jsonEncode({
+                'keys': [
+                  _jwk,
                   {
                     'kid': 'ec-key',
                     'kty': 'EC',
@@ -324,12 +391,12 @@ void main() {
                     'y': 'b',
                   },
                 ],
-              ),
+              }),
               200,
             ),
           );
 
-          expect(await cache.lookupKey(key.keyId), isNotNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
           expect(await cache.lookupKey('ec-key'), isNull);
         });
 
@@ -338,7 +405,7 @@ void main() {
             (_) => http.Response(
               jsonEncode({
                 'keys': [
-                  {...key.jwk, 'alg': 'RS512'},
+                  {..._jwk, 'alg': 'RS512'},
                 ],
               }),
               200,
@@ -346,7 +413,7 @@ void main() {
           );
 
           await expectLater(
-            cache.lookupKey(key.keyId),
+            cache.lookupKey(_keyId),
             throwsA(
               isA<TokenVerificationException>().having(
                 (e) => e.message,
@@ -360,26 +427,27 @@ void main() {
         test('skips an individually malformed key', () async {
           final (:cache, requests: _) = buildCache(
             (_) => http.Response(
-              key.jwksJson(
-                alsoInclude: [
+              jsonEncode({
+                'keys': [
+                  _jwk,
                   {'kid': 'broken', 'kty': 'RSA', 'n': '!!!', 'e': 'AQAB'},
                 ],
-              ),
+              }),
               200,
             ),
           );
 
-          expect(await cache.lookupKey(key.keyId), isNotNull);
+          expect(await cache.lookupKey(_keyId), isNotNull);
           expect(await cache.lookupKey('broken'), isNull);
         });
 
         test('throws on a response with no usable keys', () async {
           final (:cache, requests: _) = buildCache(
-            (_) => http.Response(jsonEncode({'keys': <Object?>[]}), 200),
+            (_) => http.Response(jsonEncode({'keys': const <Object?>[]}), 200),
           );
 
           await expectLater(
-            cache.lookupKey(key.keyId),
+            cache.lookupKey(_keyId),
             throwsA(isA<TokenVerificationException>()),
           );
         });
@@ -390,7 +458,7 @@ void main() {
           );
 
           await expectLater(
-            cache.lookupKey(key.keyId),
+            cache.lookupKey(_keyId),
             throwsA(
               isA<TokenVerificationException>().having(
                 (e) => e.message,
@@ -408,7 +476,7 @@ void main() {
         );
 
         await expectLater(
-          cache.lookupKey(key.keyId),
+          cache.lookupKey(_keyId),
           throwsA(
             isA<TokenVerificationException>().having(
               (e) => e.message,
@@ -422,13 +490,15 @@ void main() {
       test('refresh discards cached keys', () async {
         final (:cache, :requests) = buildCache(
           (_) => http.Response(
-            key.jwksJson(),
+            jsonEncode({
+              'keys': [_jwk],
+            }),
             200,
             headers: {'cache-control': 'max-age=3600'},
           ),
         );
 
-        await cache.lookupKey(key.keyId);
+        await cache.lookupKey(_keyId);
         await cache.refresh();
 
         expect(requests, hasLength(2));

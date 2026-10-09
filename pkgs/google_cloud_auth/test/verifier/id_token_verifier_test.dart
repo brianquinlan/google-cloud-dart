@@ -26,13 +26,12 @@ const _audience = 'my-service';
 
 final _now = DateTime.utc(2026, 6, 1, 12);
 
-Matcher _throwsVerification(
-  TokenVerificationFailure reason,
-  Object messageMatcher,
-) => throwsA(
-  isA<TokenVerificationException>()
-      .having((e) => e.reason, 'reason', reason)
-      .having((e) => e.message, 'message', messageMatcher),
+Matcher _throwsVerification(Object messageMatcher) => throwsA(
+  isA<TokenVerificationException>().having(
+    (e) => e.message,
+    'message',
+    messageMatcher,
+  ),
 );
 
 void main() {
@@ -109,10 +108,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidSignature,
-              contains('signature is invalid'),
-            ),
+            _throwsVerification(contains('signature is invalid')),
           );
         });
 
@@ -122,10 +118,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidSignature,
-              contains('signature is invalid'),
-            ),
+            _throwsVerification(contains('signature is invalid')),
           );
         });
 
@@ -137,10 +130,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.unknownKeyId,
-              contains('does not match any key'),
-            ),
+            _throwsVerification(contains('does not match any key')),
           );
         });
 
@@ -152,10 +142,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.missingKeyId,
-              contains('no "kid"'),
-            ),
+            _throwsVerification(contains('no "kid"')),
           );
         });
       });
@@ -173,10 +160,7 @@ void main() {
 
             await expectLater(
               buildVerifier().verify(token),
-              _throwsVerification(
-                TokenVerificationFailure.unsupportedAlgorithm,
-                contains('must be "RS256"'),
-              ),
+              _throwsVerification(contains('must be "RS256"')),
             );
           });
         }
@@ -189,10 +173,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.unsupportedAlgorithm,
-              contains('must be "RS256"'),
-            ),
+            _throwsVerification(contains('must be "RS256"')),
           );
         });
       });
@@ -205,10 +186,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidIssuer,
-              contains('"iss"'),
-            ),
+            _throwsVerification(contains('"iss"')),
           );
         });
 
@@ -219,10 +197,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidIssuer,
-              contains('"iss"'),
-            ),
+            _throwsVerification(contains('"iss"')),
           );
         });
 
@@ -269,10 +244,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidAudience,
-              contains('"aud"'),
-            ),
+            _throwsVerification(contains('"aud"')),
           );
         });
 
@@ -285,10 +257,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.invalidAudience,
-              contains('"aud"'),
-            ),
+            _throwsVerification(contains('"aud"')),
           );
         });
 
@@ -301,10 +270,7 @@ void main() {
 
             await expectLater(
               buildVerifier().verify(token),
-              _throwsVerification(
-                TokenVerificationFailure.invalidAudience,
-                contains('"aud"'),
-              ),
+              _throwsVerification(contains('"aud"')),
             );
           },
         );
@@ -332,10 +298,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.expired,
-              contains('expired'),
-            ),
+            _throwsVerification(contains('expired')),
           );
         });
 
@@ -358,10 +321,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.expired,
-              contains('expired'),
-            ),
+            _throwsVerification(contains('expired')),
           );
         });
 
@@ -374,10 +334,7 @@ void main() {
 
           await expectLater(
             buildVerifier(clockSkewTolerance: Duration.zero).verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.expired,
-              contains('expired'),
-            ),
+            _throwsVerification(contains('expired')),
           );
         });
 
@@ -389,10 +346,7 @@ void main() {
 
           await expectLater(
             buildVerifier().verify(token),
-            _throwsVerification(
-              TokenVerificationFailure.missingExpiration,
-              contains('no "exp"'),
-            ),
+            _throwsVerification(contains('no "exp"')),
           );
         });
       });
@@ -409,10 +363,7 @@ void main() {
 
             await expectLater(
               buildVerifier().verify(token),
-              _throwsVerification(
-                TokenVerificationFailure.issuedInFuture,
-                contains('in the future'),
-              ),
+              _throwsVerification(contains('in the future')),
             );
           },
         );
@@ -506,10 +457,7 @@ void main() {
           test('rejects ${token.isEmpty ? '(empty)' : token}', () async {
             await expectLater(
               buildVerifier().verify(token),
-              _throwsVerification(
-                TokenVerificationFailure.malformed,
-                contains('well-formed JWS'),
-              ),
+              _throwsVerification(contains('well-formed JWS')),
             );
           });
         }
@@ -526,10 +474,7 @@ void main() {
 
         await expectLater(
           verifier.verify(token),
-          _throwsVerification(
-            TokenVerificationFailure.keyUnavailable,
-            contains('Failed to fetch public keys'),
-          ),
+          _throwsVerification(contains('Failed to fetch public keys')),
         );
       });
 
