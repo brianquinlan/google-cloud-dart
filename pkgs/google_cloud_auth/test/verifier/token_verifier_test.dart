@@ -59,8 +59,8 @@ void main() {
   );
 
   /// A payload that passes every check, with the given overrides applied.
-  Map<String, dynamic> validPayload([
-    Map<String, dynamic> overrides = const {},
+  Map<String, Object?> validPayload([
+    Map<String, Object?> overrides = const {},
   ]) => {
     'iss': _issuer,
     'aud': _audience,

@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// Design based on:
+/// - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/json/webtoken/JsonWebSignature.java
+/// - https://github.com/googleapis/google-auth-library-python/blob/main/google/auth/jwt.py
+library;
+
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -27,7 +33,7 @@ Uint8List _decodeBase64Url(String segment, String name) {
 }
 
 /// Decodes an unpadded base64url [segment] containing a UTF-8 JSON object.
-Map<String, dynamic> _decodeJsonSegment(String segment, String name) {
+Map<String, Object?> _decodeJsonSegment(String segment, String name) {
   final bytes = _decodeBase64Url(segment, name);
 
   final Object? decoded;
@@ -37,21 +43,17 @@ Map<String, dynamic> _decodeJsonSegment(String segment, String name) {
     throw FormatException('The JWS $name is not valid JSON: ${e.message}');
   }
 
-  if (decoded is! Map<String, dynamic>) {
+  if (decoded is! Map<String, Object?>) {
     throw FormatException('The JWS $name must be a JSON object.');
   }
   return decoded;
 }
 
 /// Reads [name] from [json], returning `null` if absent or not a [String].
-String? _optionalString(Map<String, dynamic> json, String name) {
+String? _optionalString(Map<String, Object?> json, String name) {
   final value = json[name];
   return value is String ? value : null;
 }
-
-// Design based on:
-// - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/json/webtoken/JsonWebSignature.java
-// - https://github.com/googleapis/google-auth-library-python/blob/main/google/auth/jwt.py
 
 /// The decoded parts of a JSON Web Signature (JWS) in compact serialization,
 /// as defined by [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515).
@@ -62,10 +64,10 @@ String? _optionalString(Map<String, dynamic> json, String name) {
 @internal
 final class JwsParts {
   /// The decoded JOSE header.
-  final Map<String, dynamic> header;
+  final Map<String, Object?> header;
 
   /// The decoded payload, also known as the claims set.
-  final Map<String, dynamic> payload;
+  final Map<String, Object?> payload;
 
   /// The raw signature bytes.
   ///

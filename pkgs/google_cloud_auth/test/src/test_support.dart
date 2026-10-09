@@ -34,7 +34,7 @@ final class TestKey {
   final RsassaPkcs1V15PublicKey publicKey;
 
   /// The public key as a JWK, ready to embed in a JWKS document.
-  final Map<String, dynamic> jwk;
+  final Map<String, Object?> jwk;
 
   /// The public key as DER `SubjectPublicKeyInfo`.
   final Uint8List spki;
@@ -68,11 +68,11 @@ final class TestKey {
   /// [header] entries override the defaults, so a test can e.g. set a wrong
   /// `alg` or drop the `kid`.
   Future<String> mintToken({
-    required Map<String, dynamic> payload,
-    Map<String, dynamic> header = const {},
+    required Map<String, Object?> payload,
+    Map<String, Object?> header = const {},
     bool corruptSignature = false,
   }) async {
-    final fullHeader = <String, dynamic>{
+    final fullHeader = <String, Object?>{
       'alg': 'RS256',
       'typ': 'JWT',
       'kid': keyId,
@@ -91,7 +91,7 @@ final class TestKey {
   }
 
   /// A JWKS document containing this key.
-  String jwksJson({List<Map<String, dynamic>> alsoInclude = const []}) =>
+  String jwksJson({List<Map<String, Object?>> alsoInclude = const []}) =>
       jsonEncode({
         'keys': [jwk, ...alsoInclude],
       });

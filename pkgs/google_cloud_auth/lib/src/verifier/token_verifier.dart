@@ -26,13 +26,13 @@ import 'token_verification_exception.dart';
 /// [RFC 8725 §3.1](https://datatracker.ietf.org/doc/html/rfc8725#section-3.1).
 const _requiredAlgorithm = 'RS256';
 
-String? _optionalString(Map<String, dynamic> json, String name) {
+String? _optionalString(Map<String, Object?> json, String name) {
   final value = json[name];
   return value is String ? value : null;
 }
 
 /// Reads a JWT `NumericDate` claim, returning `null` if absent or malformed.
-DateTime? _timestamp(Map<String, dynamic> payload, String name) {
+DateTime? _timestamp(Map<String, Object?> payload, String name) {
   final value = payload[name];
   if (value is! num) return null;
   return DateTime.fromMillisecondsSinceEpoch(value.toInt() * 1000, isUtc: true);
@@ -41,14 +41,13 @@ DateTime? _timestamp(Map<String, dynamic> payload, String name) {
 /// Normalizes an `aud` claim, which may be a string or a list of strings.
 List<String> _audienceList(Object? audience) => switch (audience) {
   final String value => [value],
-  final List<dynamic> values => values.whereType<String>().toList(),
+  final List<Object?> values => values.whereType<String>().toList(),
   _ => const [],
 };
 
 // Design based on:
 // - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/googleapis/auth/oauth2/GoogleIdTokenVerifier.java
 // - https://github.com/googleapis/google-auth-library-python/blob/main/google/oauth2/id_token.py
-
 
 /// Validated claims extracted from a verified JWT ID token.
 final class IdTokenClaims {
@@ -80,7 +79,7 @@ final class IdTokenClaims {
   /// The payload as a whole is covered by the verified signature. The name
   /// refers to the individual claims within it that this class did not
   /// itself validate, such as application-specific custom claims.
-  final Map<String, dynamic> allClaims;
+  final Map<String, Object?> allClaims;
 
   IdTokenClaims._({
     required this.subject,
@@ -103,7 +102,6 @@ final class IdTokenClaims {
     return value == true || value == 'true';
   }
 }
-
 
 /// Generic OpenID Connect and JWKS ID token verifier.
 ///
@@ -222,7 +220,7 @@ final class TokenVerifier {
     return _verifyClaims(parts.payload);
   }
 
-  IdTokenClaims _verifyClaims(Map<String, dynamic> payload) {
+  IdTokenClaims _verifyClaims(Map<String, Object?> payload) {
     final issuer = _optionalString(payload, 'iss');
     final expectedIssuers = this.expectedIssuers;
     if (expectedIssuers != null &&
