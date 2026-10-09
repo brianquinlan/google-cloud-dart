@@ -49,6 +49,62 @@ List<String> _audienceList(Object? audience) => switch (audience) {
 // - https://github.com/googleapis/google-api-java-client/blob/main/google-api-client/src/main/java/com/google/api/client/googleapis/auth/oauth2/GoogleIdTokenVerifier.java
 // - https://github.com/googleapis/google-auth-library-python/blob/main/google/oauth2/id_token.py
 
+
+/// Validated claims extracted from a verified JWT ID token.
+final class IdTokenClaims {
+  // Present on essentially all ID tokens, but not required: neither the Java
+  // nor the Python reference verifier enforces it, and some Google tokens
+  // legitimately omit it.
+  /// The `sub` (subject) claim, or `null` if absent.
+  final String? subject;
+
+  /// The `iss` (issuer) claim, or `null` if absent.
+  ///
+  /// Guaranteed non-null when the verifier was configured with
+  /// [TokenVerifier.expectedIssuers].
+  final String? issuer;
+
+  /// The `aud` (audience) claim, normalized to a list.
+  ///
+  /// Empty if the token carries no audience.
+  final List<String> audience;
+
+  /// The `exp` (expiration time) claim.
+  final DateTime expiry;
+
+  /// The `iat` (issued at) claim, or `null` if absent.
+  final DateTime? issuedAt;
+
+  /// The complete token payload.
+  ///
+  /// The payload as a whole is covered by the verified signature. The name
+  /// refers to the individual claims within it that this class did not
+  /// itself validate, such as application-specific custom claims.
+  final Map<String, dynamic> allClaims;
+
+  IdTokenClaims._({
+    required this.subject,
+    required this.issuer,
+    required this.audience,
+    required this.expiry,
+    required this.issuedAt,
+    required this.allClaims,
+  });
+
+  /// The `email` claim, or `null` if absent.
+  String? get email => _optionalString(allClaims, 'email');
+
+  /// Whether the `email_verified` claim is set.
+  ///
+  /// Accepts both the boolean `true` and the string `"true"`, matching the
+  /// coercion the Java reference implementation performs.
+  bool get isEmailVerified {
+    final value = allClaims['email_verified'];
+    return value == true || value == 'true';
+  }
+}
+
+
 /// Generic OpenID Connect and JWKS ID token verifier.
 ///
 /// Verifies the RS256 signature of an inbound token against the public keys
@@ -220,58 +276,4 @@ final class TokenVerifier {
 
   /// Discards the cached public keys and fetches a new set.
   Future<void> refreshKeys() => _jwksCache.refresh();
-}
-
-/// Validated claims extracted from a verified JWT ID token.
-final class IdTokenClaims {
-  // Present on essentially all ID tokens, but not required: neither the Java
-  // nor the Python reference verifier enforces it, and some Google tokens
-  // legitimately omit it.
-  /// The `sub` (subject) claim, or `null` if absent.
-  final String? subject;
-
-  /// The `iss` (issuer) claim, or `null` if absent.
-  ///
-  /// Guaranteed non-null when the verifier was configured with
-  /// [TokenVerifier.expectedIssuers].
-  final String? issuer;
-
-  /// The `aud` (audience) claim, normalized to a list.
-  ///
-  /// Empty if the token carries no audience.
-  final List<String> audience;
-
-  /// The `exp` (expiration time) claim.
-  final DateTime expiry;
-
-  /// The `iat` (issued at) claim, or `null` if absent.
-  final DateTime? issuedAt;
-
-  /// The complete token payload.
-  ///
-  /// The payload as a whole is covered by the verified signature. The name
-  /// refers to the individual claims within it that this class did not
-  /// itself validate, such as application-specific custom claims.
-  final Map<String, dynamic> allClaims;
-
-  IdTokenClaims._({
-    required this.subject,
-    required this.issuer,
-    required this.audience,
-    required this.expiry,
-    required this.issuedAt,
-    required this.allClaims,
-  });
-
-  /// The `email` claim, or `null` if absent.
-  String? get email => _optionalString(allClaims, 'email');
-
-  /// Whether the `email_verified` claim is set.
-  ///
-  /// Accepts both the boolean `true` and the string `"true"`, matching the
-  /// coercion the Java reference implementation performs.
-  bool get isEmailVerified {
-    final value = allClaims['email_verified'];
-    return value == true || value == 'true';
-  }
 }
