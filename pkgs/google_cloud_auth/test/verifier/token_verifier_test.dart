@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:convert';
+
 import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:test/test.dart';
+import 'package:webcrypto/webcrypto.dart';
 
-import '../src/test_support.dart';
 import '../test_utils.dart';
 
 final _jwksUri = Uri.https('example.com', '/certs');
 const _issuer = 'https://issuer.example.com';
 const _audience = 'my-service';
+const _keyId = 'test-key-1';
 
 final _now = DateTime.utc(2026, 6, 1, 12);
+
+/// Converts [time] to a JWT `NumericDate`, in seconds since the epoch.
+int _numericDate(DateTime time) => time.millisecondsSinceEpoch ~/ 1000;
 
 Matcher _throwsVerification(Object messageMatcher) => throwsA(
   isA<TokenVerificationException>().having(
@@ -35,11 +41,22 @@ Matcher _throwsVerification(Object messageMatcher) => throwsA(
 );
 
 void main() {
-  late TestKey key;
+  late RsassaPkcs1V15PrivateKey privateKey;
+  late String jwksJson;
 
   setUpAll(() async {
     if (!canUseWebCrypto) return;
-    key = await TestKey.generate();
+    privateKey = await testWebCryptoPrivateKey();
+    jwksJson = jsonEncode({
+      'keys': [
+        {
+          ...await (await getTestPublicKey()).exportJsonWebKey(),
+          'kid': _keyId,
+          'alg': 'RS256',
+          'use': 'sig',
+        },
+      ],
+    });
   });
 
   TokenVerifier buildVerifier({
@@ -55,8 +72,35 @@ void main() {
     clockSkewTolerance: clockSkewTolerance,
     clock: () => now ?? _now,
     clientFactory: () =>
-        MockClient((_) async => http.Response(jwksBody ?? key.jwksJson(), 200)),
+        MockClient((_) async => http.Response(jwksBody ?? jwksJson, 200)),
   );
+
+  /// Signs a JWT with [testPrivateKey].
+  ///
+  /// [header] entries override the defaults, so a test can e.g. set a wrong
+  /// `alg`, or drop the `kid` by setting it to `null`.
+  Future<String> mintToken({
+    required Map<String, Object?> payload,
+    Map<String, Object?> header = const {},
+    bool corruptSignature = false,
+  }) async {
+    final fullHeader = <String, Object?>{
+      'alg': 'RS256',
+      'typ': 'JWT',
+      'kid': _keyId,
+      ...header,
+    }..removeWhere((_, value) => value == null);
+
+    final signingInput =
+        '${base64UrlUnpadded(utf8.encode(jsonEncode(fullHeader)))}'
+        '.'
+        '${base64UrlUnpadded(utf8.encode(jsonEncode(payload)))}';
+
+    final signature = await privateKey.signBytes(ascii.encode(signingInput));
+    if (corruptSignature) signature[0] ^= 0xff;
+
+    return '$signingInput.${base64UrlUnpadded(signature)}';
+  }
 
   /// A payload that passes every check, with the given overrides applied.
   Map<String, Object?> validPayload([
@@ -65,8 +109,8 @@ void main() {
     'iss': _issuer,
     'aud': _audience,
     'sub': 'user-123',
-    'iat': numericDate(_now.subtract(const Duration(minutes: 1))),
-    'exp': numericDate(_now.add(const Duration(hours: 1))),
+    'iat': _numericDate(_now.subtract(const Duration(minutes: 1))),
+    'exp': _numericDate(_now.add(const Duration(hours: 1))),
     ...overrides,
   }..removeWhere((_, value) => value == #absent);
 
@@ -74,7 +118,7 @@ void main() {
     'IdTokenVerifier.verify',
     () {
       test('accepts a valid token and returns its claims', () async {
-        final token = await key.mintToken(payload: validPayload());
+        final token = await mintToken(payload: validPayload());
 
         final claims = await buildVerifier().verify(token);
 
@@ -86,7 +130,7 @@ void main() {
       });
 
       test('exposes custom claims through unverifiedPayload', () async {
-        final token = await key.mintToken(
+        final token = await mintToken(
           payload: validPayload({
             'tenant': 'acme',
             'roles': ['admin'],
@@ -101,7 +145,7 @@ void main() {
 
       group('signature', () {
         test('rejects a corrupted signature', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload(),
             corruptSignature: true,
           );
@@ -113,17 +157,20 @@ void main() {
         });
 
         test('rejects a token signed by a different key', () async {
-          final attacker = await TestKey.generate(keyId: key.keyId);
-          final token = await attacker.mintToken(payload: validPayload());
+          // The endpoint publishes some other key under the token's `kid`.
+          final verifier = buildVerifier(
+            jwksBody: jsonEncode({_keyId: testGoogleSecureTokenCertificatePem}),
+          );
+          final token = await mintToken(payload: validPayload());
 
           await expectLater(
-            buildVerifier().verify(token),
+            verifier.verify(token),
             _throwsVerification(contains('signature is invalid')),
           );
         });
 
         test('rejects an unknown key id', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload(),
             header: {'kid': 'not-published'},
           );
@@ -135,7 +182,7 @@ void main() {
         });
 
         test('rejects a token with no key id', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload(),
             header: {'kid': null},
           );
@@ -153,7 +200,7 @@ void main() {
         // fooled, so each of these must be rejected before any key lookup.
         for (final algorithm in ['none', 'HS256', 'RS512', 'ES256']) {
           test('rejects "$algorithm"', () async {
-            final token = await key.mintToken(
+            final token = await mintToken(
               payload: validPayload(),
               header: {'alg': algorithm},
             );
@@ -166,7 +213,7 @@ void main() {
         }
 
         test('rejects a missing algorithm', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload(),
             header: {'alg': null},
           );
@@ -180,7 +227,7 @@ void main() {
 
       group('issuer', () {
         test('rejects a mismatch', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'iss': 'https://evil.example.com'}),
           );
 
@@ -191,7 +238,7 @@ void main() {
         });
 
         test('rejects a missing issuer when issuers are configured', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'iss': #absent}),
           );
 
@@ -202,7 +249,7 @@ void main() {
         });
 
         test('accepts any of several configured issuers', () async {
-          final token = await key.mintToken(payload: validPayload());
+          final token = await mintToken(payload: validPayload());
 
           final claims = await buildVerifier(
             expectedIssuers: {'https://other.example.com', _issuer},
@@ -212,7 +259,7 @@ void main() {
         });
 
         test('skips the check when no issuers are configured', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'iss': #absent}),
           );
 
@@ -226,7 +273,7 @@ void main() {
 
       group('audience', () {
         test('accepts a list containing an allowed audience', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
               'aud': ['other', _audience],
             }),
@@ -238,7 +285,7 @@ void main() {
         });
 
         test('rejects a mismatch', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'aud': 'someone-else'}),
           );
 
@@ -251,7 +298,7 @@ void main() {
         test('rejects a superstring rather than matching loosely', () async {
           // Guards against the substring matching the previous Firebase
           // functions implementation used.
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'aud': 'not-$_audience-really'}),
           );
 
@@ -264,7 +311,7 @@ void main() {
         test(
           'rejects a missing audience when audiences are configured',
           () async {
-            final token = await key.mintToken(
+            final token = await mintToken(
               payload: validPayload({'aud': #absent}),
             );
 
@@ -276,7 +323,7 @@ void main() {
         );
 
         test('skips the check when no audiences are configured', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'aud': 'anything'}),
           );
 
@@ -290,9 +337,9 @@ void main() {
 
       group('expiration', () {
         test('rejects an expired token', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
-              'exp': numericDate(_now.subtract(const Duration(hours: 1))),
+              'exp': _numericDate(_now.subtract(const Duration(hours: 1))),
             }),
           );
 
@@ -303,9 +350,9 @@ void main() {
         });
 
         test('accepts a token expired within the skew tolerance', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
-              'exp': numericDate(_now.subtract(const Duration(minutes: 2))),
+              'exp': _numericDate(_now.subtract(const Duration(minutes: 2))),
             }),
           );
 
@@ -313,9 +360,9 @@ void main() {
         });
 
         test('rejects a token expired beyond the skew tolerance', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
-              'exp': numericDate(_now.subtract(const Duration(minutes: 6))),
+              'exp': _numericDate(_now.subtract(const Duration(minutes: 6))),
             }),
           );
 
@@ -326,9 +373,9 @@ void main() {
         });
 
         test('honors a custom skew tolerance', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
-              'exp': numericDate(_now.subtract(const Duration(minutes: 2))),
+              'exp': _numericDate(_now.subtract(const Duration(minutes: 2))),
             }),
           );
 
@@ -340,7 +387,7 @@ void main() {
 
         test('rejects a token with no exp claim', () async {
           // A token without an expiry would otherwise be valid forever.
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'exp': #absent}),
           );
 
@@ -355,9 +402,9 @@ void main() {
         test(
           'rejects a token issued beyond the skew tolerance ahead',
           () async {
-            final token = await key.mintToken(
+            final token = await mintToken(
               payload: validPayload({
-                'iat': numericDate(_now.add(const Duration(minutes: 6))),
+                'iat': _numericDate(_now.add(const Duration(minutes: 6))),
               }),
             );
 
@@ -369,9 +416,9 @@ void main() {
         );
 
         test('accepts a token issued slightly ahead', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({
-              'iat': numericDate(_now.add(const Duration(minutes: 2))),
+              'iat': _numericDate(_now.add(const Duration(minutes: 2))),
             }),
           );
 
@@ -379,7 +426,7 @@ void main() {
         });
 
         test('accepts a token with no iat claim', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'iat': #absent}),
           );
 
@@ -391,7 +438,7 @@ void main() {
 
       group('subject', () {
         test('is exposed when present', () async {
-          final token = await key.mintToken(payload: validPayload());
+          final token = await mintToken(payload: validPayload());
 
           expect((await buildVerifier().verify(token)).subject, 'user-123');
         });
@@ -400,7 +447,7 @@ void main() {
           // Some Google tokens, such as Firebase beforeSendEmail events,
           // legitimately omit `sub`, and neither reference verifier requires
           // it.
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'sub': #absent}),
           );
 
@@ -410,7 +457,7 @@ void main() {
 
       group('email claims', () {
         test('exposes email', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'email': 'user@example.com'}),
           );
 
@@ -421,7 +468,7 @@ void main() {
         });
 
         test('isEmailVerified accepts the boolean true', () async {
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'email_verified': true}),
           );
 
@@ -430,7 +477,7 @@ void main() {
 
         test('isEmailVerified accepts the string "true"', () async {
           // Google emits both forms; Java coerces them the same way.
-          final token = await key.mintToken(
+          final token = await mintToken(
             payload: validPayload({'email_verified': 'true'}),
           );
 
@@ -439,7 +486,7 @@ void main() {
 
         test('isEmailVerified is false when absent or falsy', () async {
           for (final value in [false, 'false', 'yes', 0, #absent]) {
-            final token = await key.mintToken(
+            final token = await mintToken(
               payload: validPayload({'email_verified': value}),
             );
 
@@ -470,7 +517,7 @@ void main() {
           clientFactory: () =>
               MockClient((_) async => http.Response('down', 503)),
         );
-        final token = await key.mintToken(payload: validPayload());
+        final token = await mintToken(payload: validPayload());
 
         await expectLater(
           verifier.verify(token),
@@ -485,10 +532,11 @@ void main() {
           allowedAudiences: const {_audience},
           clock: () => _now,
           clientFactory: () => MockClient(
-            (_) async => http.Response(key.certificateMapJson(), 200),
+            (_) async =>
+                http.Response(jsonEncode({_keyId: testCertificatePem}), 200),
           ),
         );
-        final token = await key.mintToken(payload: validPayload());
+        final token = await mintToken(payload: validPayload());
 
         expect((await verifier.verify(token)).subject, 'user-123');
       });

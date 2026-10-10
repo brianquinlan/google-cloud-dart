@@ -17,7 +17,6 @@
 /// - https://github.com/googleapis/google-auth-library-python/blob/main/google/auth/jwt.py
 library;
 
-
 import 'dart:convert';
 import 'dart:typed_data';
 

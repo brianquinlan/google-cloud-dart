@@ -17,14 +17,14 @@ import 'dart:convert';
 import 'package:google_cloud_auth/src/verifier/jws_parser.dart';
 import 'package:test/test.dart';
 
-import '../src/test_support.dart';
+import '../test_utils.dart';
 
 String _segment(Object? json) =>
     base64UrlUnpadded(utf8.encode(jsonEncode(json)));
 
 void main() {
-  group('JwsParts.parseUnverified', () {
-    test('decodes header, payload and signature', () {
+  group('JwsParts.parse', () {
+    test('success', () {
       final token =
           '${_segment({'alg': 'RS256', 'kid': 'abc'})}'
           '.${_segment({'sub': 'user-1', 'exp': 123})}'
@@ -49,7 +49,7 @@ void main() {
       expect(ascii.decode(parts.signedContent), '$header.$payload');
     });
 
-    test('accepts an empty signature, as emulators produce', () {
+    test('empty signature, as emulators produce', () {
       final token =
           '${_segment({'alg': 'none'})}.${_segment({'sub': 'user-1'})}.';
 
@@ -111,10 +111,7 @@ void main() {
       });
 
       test('an empty string', () {
-        expect(
-          () => JwsParts.parse(''),
-          throwsA(isA<FormatException>()),
-        );
+        expect(() => JwsParts.parse(''), throwsA(isA<FormatException>()));
       });
 
       test('a segment that is not base64url', () {
