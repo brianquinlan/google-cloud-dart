@@ -79,7 +79,6 @@ void main() {
       expect(parts.keyId, isNull);
     });
 
-    group('rejects', () {
       test('a token with too few segments', () {
         expect(
           () => JwsParts.parse('only-one'),
@@ -156,6 +155,5 @@ void main() {
           ),
         );
       });
-    });
   });
 }
