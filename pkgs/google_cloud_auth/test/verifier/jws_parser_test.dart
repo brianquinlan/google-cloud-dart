@@ -70,90 +70,104 @@ void main() {
       expect(JwsParts.parse(token).payload, payload);
     });
 
-    test('algorithm and keyId are null when absent or not strings', () {
-      final token = '${_segment({'alg': 123})}.${_segment({'sub': 'user-1'})}.';
+    test('missing algorithm', () {
+      final token =
+          '${_segment({'kid': 'abc'})}.${_segment({'sub': 'user-1'})}.';
 
-      final parts = JwsParts.parse(token);
-
-      expect(parts.algorithm, isNull);
-      expect(parts.keyId, isNull);
+      expect(JwsParts.parse(token).algorithm, isNull);
     });
 
-      test('a token with too few segments', () {
-        expect(
-          () => JwsParts.parse('only-one'),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('found 1'),
-            ),
-          ),
-        );
-        expect(
-          () => JwsParts.parse('one.two'),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('found 2'),
-            ),
-          ),
-        );
-      });
+    test('missing keyId', () {
+      final token =
+          '${_segment({'alg': 'RS256'})}.${_segment({'sub': 'user-1'})}.';
 
-      test('a token with too many segments', () {
-        expect(
-          () => JwsParts.parse('a.b.c.d'),
-          throwsA(isA<FormatException>()),
-        );
-      });
+      expect(JwsParts.parse(token).keyId, isNull);
+    });
 
-      test('an empty string', () {
-        expect(() => JwsParts.parse(''), throwsA(isA<FormatException>()));
-      });
+    test('int algorithm', () {
+      final token = '${_segment({'alg': 123})}.${_segment({'sub': 'user-1'})}.';
 
-      test('a segment that is not base64url', () {
-        expect(
-          () => JwsParts.parse('!!!.${_segment({'a': 1})}.'),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('base64url'),
-            ),
-          ),
-        );
-      });
+      expect(JwsParts.parse(token).algorithm, isNull);
+    });
 
-      test('a segment that is not JSON', () {
-        final notJson = base64UrlUnpadded(utf8.encode('not json'));
-        expect(
-          () => JwsParts.parse('$notJson.${_segment({'a': 1})}.'),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('valid JSON'),
-            ),
-          ),
-        );
-      });
+    test('int keyId', () {
+      final token = '${_segment({'kid': 123})}.${_segment({'sub': 'user-1'})}.';
 
-      test('a segment that is JSON but not an object', () {
-        expect(
-          () => JwsParts.parse(
-            '${_segment([1, 2])}.'
-            '${_segment({'a': 1})}.',
+      expect(JwsParts.parse(token).keyId, isNull);
+    });
+
+    test('a token with too few segments', () {
+      expect(
+        () => JwsParts.parse('only-one'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('found 1'),
           ),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('must be a JSON object'),
-            ),
+        ),
+      );
+      expect(
+        () => JwsParts.parse('one.two'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('found 2'),
           ),
-        );
-      });
+        ),
+      );
+    });
+
+    test('a token with too many segments', () {
+      expect(() => JwsParts.parse('a.b.c.d'), throwsA(isA<FormatException>()));
+    });
+
+    test('an empty string', () {
+      expect(() => JwsParts.parse(''), throwsA(isA<FormatException>()));
+    });
+
+    test('a segment that is not base64url', () {
+      expect(
+        () => JwsParts.parse('!!!.${_segment({'a': 1})}.'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('base64url'),
+          ),
+        ),
+      );
+    });
+
+    test('a segment that is not JSON', () {
+      final notJson = base64UrlUnpadded(utf8.encode('not json'));
+      expect(
+        () => JwsParts.parse('$notJson.${_segment({'a': 1})}.'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('valid JSON'),
+          ),
+        ),
+      );
+    });
+
+    test('a segment that is JSON but not an object', () {
+      expect(
+        () => JwsParts.parse(
+          '${_segment([1, 2])}.'
+          '${_segment({'a': 1})}.',
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('must be a JSON object'),
+          ),
+        ),
+      );
+    });
   });
 }
