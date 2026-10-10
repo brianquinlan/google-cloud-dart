@@ -49,6 +49,15 @@ OP9gIW99PMdNXeCY/3cnegSg7Va7NyeMEBju8vRPdbtUzEdoYhRbWuMJZ+FQ3/t0
 Cx62UQBVeiF3/RKuqixbLV4=
 -----END PRIVATE KEY-----''';
 
+Future<RsassaPkcs1V15PrivateKey> testWebCryptoPrivateKey() async {
+  final match = RegExp(
+    r'-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----',
+    dotAll: true,
+  ).firstMatch(testPrivateKey)!;
+  final bytes = base64.decode(match.group(1)!.replaceAll(RegExp(r'\s'), ''));
+  return await RsassaPkcs1V15PrivateKey.importPkcs8Key(bytes, Hash.sha256);
+}
+
 const testPublicKey = '''-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvOvp/wH/QvbAaJl9YzjB
 uvyjWvedBwmBX3Ph0bkxMT9xuDFibxZ5siOlcbddxWG4b6G4JBALA2XF+vGp+T/v
@@ -66,15 +75,6 @@ Future<RsassaPkcs1V15PublicKey> getTestPublicKey() async {
   ).firstMatch(testPublicKey)!;
   final bytes = base64.decode(match.group(1)!.replaceAll(RegExp(r'\s'), ''));
   return await RsassaPkcs1V15PublicKey.importSpkiKey(bytes, Hash.sha256);
-}
-
-Future<RsassaPkcs1V15PrivateKey> testWebCryptoPrivateKey() async {
-  final match = RegExp(
-    r'-----BEGIN PRIVATE KEY-----(.*?)-----END PRIVATE KEY-----',
-    dotAll: true,
-  ).firstMatch(testPrivateKey)!;
-  final bytes = base64.decode(match.group(1)!.replaceAll(RegExp(r'\s'), ''));
-  return await RsassaPkcs1V15PrivateKey.importPkcs8Key(bytes, Hash.sha256);
 }
 
 /// A self-signed certificate for [testPublicKey], generated with:
