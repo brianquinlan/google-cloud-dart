@@ -34,6 +34,7 @@ import 'package:google_cloud_iam_v1/iam.dart';
 import 'package:google_cloud_location/location.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/rpc.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:http/http.dart' as http;
@@ -106,7 +107,13 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListSecretsResponse> listSecrets(ListSecretsRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListSecretsResponse> listSecrets(
+    ListSecretsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}/secrets',
       queryParameters: {
@@ -117,7 +124,7 @@ final class SecretManagerService {
         if (request.filter case final $1 when $1.isNotDefault) 'filter': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListSecretsResponse.fromJson(response);
   }
 
@@ -127,14 +134,24 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Secret> createSecret(CreateSecretRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Secret> createSecret(
+    CreateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}/secrets',
       queryParameters: {
         if (request.secretId case final $1 when $1.isNotDefault) 'secretId': $1,
       },
     );
-    final response = await _client.post(url, body: request.secret);
+    final response = await _client.post(
+      url,
+      body: request.secret,
+      retry: retry ?? noRetry,
+    );
     return Secret.fromJson(response);
   }
 
@@ -145,11 +162,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> addSecretVersion(
-    AddSecretVersionRequest request,
-  ) async {
+    AddSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.parent}:addVersion');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -158,9 +183,15 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Secret> getSecret(GetSecretRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Secret> getSecret(
+    GetSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Secret.fromJson(response);
   }
 
@@ -170,14 +201,24 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Secret> updateSecret(UpdateSecretRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Secret> updateSecret(
+    UpdateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.secret!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.secret);
+    final response = await _client.patch(
+      url,
+      body: request.secret,
+      retry: retry ?? noRetry,
+    );
     return Secret.fromJson(response);
   }
 
@@ -186,14 +227,20 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteSecret(DeleteSecretRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteSecret(
+    DeleteSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.name}',
       queryParameters: {
         if (request.etag case final $1 when $1.isNotDefault) 'etag': $1,
       },
     );
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Lists `SecretVersions`. This
@@ -202,9 +249,13 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListSecretVersionsResponse> listSecretVersions(
-    ListSecretVersionsRequest request,
-  ) async {
+    ListSecretVersionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}/versions',
       queryParameters: {
@@ -215,7 +266,7 @@ final class SecretManagerService {
         if (request.filter case final $1 when $1.isNotDefault) 'filter': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListSecretVersionsResponse.fromJson(response);
   }
 
@@ -228,11 +279,15 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> getSecretVersion(
-    GetSecretVersionRequest request,
-  ) async {
+    GetSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return SecretVersion.fromJson(response);
   }
 
@@ -245,11 +300,15 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<AccessSecretVersionResponse> accessSecretVersion(
-    AccessSecretVersionRequest request,
-  ) async {
+    AccessSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}:access');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return AccessSecretVersionResponse.fromJson(response);
   }
 
@@ -262,11 +321,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> disableSecretVersion(
-    DisableSecretVersionRequest request,
-  ) async {
+    DisableSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}:disable');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -279,11 +346,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> enableSecretVersion(
-    EnableSecretVersionRequest request,
-  ) async {
+    EnableSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}:enable');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -297,11 +372,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> destroySecretVersion(
-    DestroySecretVersionRequest request,
-  ) async {
+    DestroySecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}:destroy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -316,9 +399,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.resource}:setIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -328,7 +421,13 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -337,7 +436,7 @@ final class SecretManagerService {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -352,13 +451,21 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -371,13 +478,21 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SecretVersion> enableManagedRotation(
-    EnableManagedRotationRequest request,
-  ) async {
+    EnableManagedRotationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}:enableManagedRotation',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -388,9 +503,19 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<SecretVersion> rotateSecret(RotateSecretRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<SecretVersion> rotateSecret(
+    RotateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.parent}:rotateSecret');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return SecretVersion.fromJson(response);
   }
 
@@ -399,9 +524,13 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.name}/locations',
       queryParameters: {
@@ -412,7 +541,7 @@ final class SecretManagerService {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -421,9 +550,15 @@ final class SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -542,8 +677,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListSecretsResponse> listSecrets(ListSecretsRequest request) async {
+  Future<ListSecretsResponse> listSecrets(
+    ListSecretsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listSecrets case final listSecrets?) {
@@ -558,8 +699,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Secret> createSecret(CreateSecretRequest request) async {
+  Future<Secret> createSecret(
+    CreateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createSecret case final createSecret?) {
@@ -575,10 +722,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> addSecretVersion(
-    AddSecretVersionRequest request,
-  ) async {
+    AddSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_addSecretVersion case final addSecretVersion?) {
@@ -592,8 +743,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Secret> getSecret(GetSecretRequest request) async {
+  Future<Secret> getSecret(
+    GetSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getSecret case final getSecret?) {
@@ -608,8 +765,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Secret> updateSecret(UpdateSecretRequest request) async {
+  Future<Secret> updateSecret(
+    UpdateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateSecret case final updateSecret?) {
@@ -623,8 +786,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteSecret(DeleteSecretRequest request) async {
+  Future<void> deleteSecret(
+    DeleteSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteSecret case final deleteSecret?) {
@@ -639,10 +808,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListSecretVersionsResponse> listSecretVersions(
-    ListSecretVersionsRequest request,
-  ) async {
+    ListSecretVersionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listSecretVersions case final listSecretVersions?) {
@@ -660,10 +833,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> getSecretVersion(
-    GetSecretVersionRequest request,
-  ) async {
+    GetSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getSecretVersion case final getSecretVersion?) {
@@ -681,10 +858,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<AccessSecretVersionResponse> accessSecretVersion(
-    AccessSecretVersionRequest request,
-  ) async {
+    AccessSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_accessSecretVersion case final accessSecretVersion?) {
@@ -702,10 +883,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> disableSecretVersion(
-    DisableSecretVersionRequest request,
-  ) async {
+    DisableSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_disableSecretVersion case final disableSecretVersion?) {
@@ -723,10 +908,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> enableSecretVersion(
-    EnableSecretVersionRequest request,
-  ) async {
+    EnableSecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_enableSecretVersion case final enableSecretVersion?) {
@@ -745,10 +934,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> destroySecretVersion(
-    DestroySecretVersionRequest request,
-  ) async {
+    DestroySecretVersionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_destroySecretVersion case final destroySecretVersion?) {
@@ -768,8 +961,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -784,8 +983,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -805,10 +1010,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -826,10 +1035,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SecretVersion> enableManagedRotation(
-    EnableManagedRotationRequest request,
-  ) async {
+    EnableManagedRotationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_enableManagedRotation case final enableManagedRotation?) {
@@ -845,8 +1058,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<SecretVersion> rotateSecret(RotateSecretRequest request) async {
+  Future<SecretVersion> rotateSecret(
+    RotateSecretRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_rotateSecret case final rotateSecret?) {
@@ -860,10 +1079,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -877,8 +1100,14 @@ base class FakeSecretManagerService implements SecretManagerService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {

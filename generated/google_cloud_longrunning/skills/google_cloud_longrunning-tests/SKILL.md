@@ -48,8 +48,9 @@ import 'package:google_cloud_longrunning/testing.dart';
 final class MyFakeOperations extends FakeOperations {
   @override
   Future<void> deleteOperation(
-    DeleteOperationRequest request,
-  ) async {
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
   }
 }

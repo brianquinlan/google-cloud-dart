@@ -53,8 +53,9 @@ import 'package:google_cloud_logging_v2/testing.dart';
 final class MyFakeConfigServiceV2 extends FakeConfigServiceV2 {
   @override
   Future<LogView> createView(
-    CreateViewRequest request,
-  ) async {
+    CreateViewRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return LogView();
   }

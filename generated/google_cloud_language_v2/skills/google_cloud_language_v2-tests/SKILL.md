@@ -49,8 +49,9 @@ import 'package:google_cloud_language_v2/testing.dart';
 final class MyFakeLanguageService extends FakeLanguageService {
   @override
   Future<AnalyzeSentimentResponse> analyzeSentiment(
-    AnalyzeSentimentRequest request,
-  ) async {
+    AnalyzeSentimentRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return AnalyzeSentimentResponse();
   }

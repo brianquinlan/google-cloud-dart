@@ -33,6 +33,7 @@ library;
 import 'package:google_cloud_longrunning/longrunning.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/rpc.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:google_cloud_type/type.dart';
@@ -104,7 +105,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Document> getDocument(GetDocumentRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Document> getDocument(
+    GetDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.name}',
       queryParameters: {
@@ -117,7 +124,7 @@ final class Firestore {
           'requestOptions.requestTags': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Document.fromJson(response);
   }
 
@@ -126,9 +133,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListDocumentsResponse> listDocuments(
-    ListDocumentsRequest request,
-  ) async {
+    ListDocumentsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}/${request.collectionId}',
       queryParameters: {
@@ -148,7 +159,7 @@ final class Firestore {
           'requestOptions.requestTags': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListDocumentsResponse.fromJson(response);
   }
 
@@ -157,7 +168,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Document> updateDocument(UpdateDocumentRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Document> updateDocument(
+    UpdateDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.document!.name}',
       queryParameters: {
@@ -174,7 +191,11 @@ final class Firestore {
           'requestOptions.requestTags': $1,
       },
     );
-    final response = await _client.patch(url, body: request.document);
+    final response = await _client.patch(
+      url,
+      body: request.document,
+      retry: retry ?? noRetry,
+    );
     return Document.fromJson(response);
   }
 
@@ -183,7 +204,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteDocument(DeleteDocumentRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteDocument(
+    DeleteDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.name}',
       queryParameters: {
@@ -196,7 +223,7 @@ final class Firestore {
           'requestOptions.requestTags': $1,
       },
     );
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Gets multiple documents.
@@ -207,14 +234,23 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Stream<BatchGetDocumentsResponse> batchGetDocuments(
-    BatchGetDocumentsRequest request,
-  ) {
+    BatchGetDocumentsRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:batchGet',
     );
     return _client
-        .postStreaming(url, body: request, enableSse: false)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: false,
+          retry: retry ?? noRetry,
+        )
         .map(BatchGetDocumentsResponse.fromJson);
   }
 
@@ -223,13 +259,21 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<BeginTransactionResponse> beginTransaction(
-    BeginTransactionRequest request,
-  ) async {
+    BeginTransactionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:beginTransaction',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return BeginTransactionResponse.fromJson(response);
   }
 
@@ -238,11 +282,21 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<CommitResponse> commit(CommitRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<CommitResponse> commit(
+    CommitRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:commit',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return CommitResponse.fromJson(response);
   }
 
@@ -251,11 +305,14 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> rollback(RollbackRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> rollback(RollbackRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:rollback',
     );
-    await _client.post(url, body: request);
+    await _client.post(url, body: request, retry: retry ?? noRetry);
   }
 
   /// Runs a query.
@@ -263,10 +320,21 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Stream<RunQueryResponse> runQuery(RunQueryRequest request) {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Stream<RunQueryResponse> runQuery(
+    RunQueryRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(path: '/v1/${request.parent}:runQuery');
     return _client
-        .postStreaming(url, body: request, enableSse: false)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: false,
+          retry: retry ?? noRetry,
+        )
         .map(RunQueryResponse.fromJson);
   }
 
@@ -275,14 +343,23 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Stream<ExecutePipelineResponse> executePipeline(
-    ExecutePipelineRequest request,
-  ) {
+    ExecutePipelineRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:executePipeline',
     );
     return _client
-        .postStreaming(url, body: request, enableSse: false)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: false,
+          retry: retry ?? noRetry,
+        )
         .map(ExecutePipelineResponse.fromJson);
   }
 
@@ -303,14 +380,23 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Stream<RunAggregationQueryResponse> runAggregationQuery(
-    RunAggregationQueryRequest request,
-  ) {
+    RunAggregationQueryRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}:runAggregationQuery',
     );
     return _client
-        .postStreaming(url, body: request, enableSse: false)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: false,
+          retry: retry ?? noRetry,
+        )
         .map(RunAggregationQueryResponse.fromJson);
   }
 
@@ -321,11 +407,19 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<PartitionQueryResponse> partitionQuery(
-    PartitionQueryRequest request,
-  ) async {
+    PartitionQueryRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.parent}:partitionQuery');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return PartitionQueryResponse.fromJson(response);
   }
 
@@ -334,13 +428,21 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListCollectionIdsResponse> listCollectionIds(
-    ListCollectionIdsRequest request,
-  ) async {
+    ListCollectionIdsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}:listCollectionIds',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return ListCollectionIdsResponse.fromJson(response);
   }
 
@@ -358,11 +460,21 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<BatchWriteResponse> batchWrite(BatchWriteRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<BatchWriteResponse> batchWrite(
+    BatchWriteRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.database}/documents:batchWrite',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return BatchWriteResponse.fromJson(response);
   }
 
@@ -371,7 +483,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Document> createDocument(CreateDocumentRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Document> createDocument(
+    CreateDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.parent}/${request.collectionId}',
       queryParameters: {
@@ -384,7 +502,11 @@ final class Firestore {
           'requestOptions.requestTags': $1,
       },
     );
-    final response = await _client.post(url, body: request.document);
+    final response = await _client.post(
+      url,
+      body: request.document,
+      retry: retry ?? noRetry,
+    );
     return Document.fromJson(response);
   }
 
@@ -393,9 +515,13 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.name}/operations',
       queryParameters: {
@@ -408,7 +534,7 @@ final class Firestore {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -418,14 +544,17 @@ final class Firestore {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -434,9 +563,15 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -444,9 +579,15 @@ final class Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.name}:cancel');
-    await _client.post(url, body: request);
+    await _client.post(url, body: request, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -572,8 +713,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Document> getDocument(GetDocumentRequest request) async {
+  Future<Document> getDocument(
+    GetDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getDocument case final getDocument?) {
@@ -587,10 +734,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListDocumentsResponse> listDocuments(
-    ListDocumentsRequest request,
-  ) async {
+    ListDocumentsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listDocuments case final listDocuments?) {
@@ -604,8 +755,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Document> updateDocument(UpdateDocumentRequest request) async {
+  Future<Document> updateDocument(
+    UpdateDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateDocument case final updateDocument?) {
@@ -619,8 +776,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteDocument(DeleteDocumentRequest request) async {
+  Future<void> deleteDocument(
+    DeleteDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteDocument case final deleteDocument?) {
@@ -637,10 +800,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Stream<BatchGetDocumentsResponse> batchGetDocuments(
-    BatchGetDocumentsRequest request,
-  ) {
+    BatchGetDocumentsRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_batchGetDocuments case final batchGetDocuments?) {
       return batchGetDocuments(request);
@@ -653,10 +820,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<BeginTransactionResponse> beginTransaction(
-    BeginTransactionRequest request,
-  ) async {
+    BeginTransactionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_beginTransaction case final beginTransaction?) {
@@ -670,8 +841,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<CommitResponse> commit(CommitRequest request) async {
+  Future<CommitResponse> commit(
+    CommitRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_commit case final commit?) {
@@ -685,8 +862,11 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> rollback(RollbackRequest request) async {
+  Future<void> rollback(RollbackRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_rollback case final rollback?) {
@@ -700,8 +880,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Stream<RunQueryResponse> runQuery(RunQueryRequest request) {
+  Stream<RunQueryResponse> runQuery(
+    RunQueryRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_runQuery case final runQuery?) {
       return runQuery(request);
@@ -714,10 +900,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Stream<ExecutePipelineResponse> executePipeline(
-    ExecutePipelineRequest request,
-  ) {
+    ExecutePipelineRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_executePipeline case final executePipeline?) {
       return executePipeline(request);
@@ -742,10 +932,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Stream<RunAggregationQueryResponse> runAggregationQuery(
-    RunAggregationQueryRequest request,
-  ) {
+    RunAggregationQueryRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_runAggregationQuery case final runAggregationQuery?) {
       return runAggregationQuery(request);
@@ -760,10 +954,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<PartitionQueryResponse> partitionQuery(
-    PartitionQueryRequest request,
-  ) async {
+    PartitionQueryRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_partitionQuery case final partitionQuery?) {
@@ -777,10 +975,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListCollectionIdsResponse> listCollectionIds(
-    ListCollectionIdsRequest request,
-  ) async {
+    ListCollectionIdsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listCollectionIds case final listCollectionIds?) {
@@ -803,8 +1005,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<BatchWriteResponse> batchWrite(BatchWriteRequest request) async {
+  Future<BatchWriteResponse> batchWrite(
+    BatchWriteRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_batchWrite case final batchWrite?) {
@@ -818,8 +1026,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Document> createDocument(CreateDocumentRequest request) async {
+  Future<Document> createDocument(
+    CreateDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createDocument case final createDocument?) {
@@ -833,10 +1047,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -850,11 +1068,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -868,8 +1089,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -883,8 +1110,14 @@ base class FakeFirestore implements Firestore {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {

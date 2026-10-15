@@ -34,6 +34,7 @@ import 'package:google_cloud_location/location.dart';
 import 'package:google_cloud_longrunning/longrunning.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:google_cloud_type/type.dart';
 import 'package:http/http.dart' as http;
@@ -105,14 +106,20 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Function$> getFunction(GetFunctionRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Function$> getFunction(
+    GetFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}',
       queryParameters: {
         if (request.revision case final $1 when $1.isNotDefault) 'revision': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Function$.fromJson(response);
   }
 
@@ -121,9 +128,13 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListFunctionsResponse> listFunctions(
-    ListFunctionsRequest request,
-  ) async {
+    ListFunctionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/functions',
       queryParameters: {
@@ -135,7 +146,7 @@ final class FunctionService {
         if (request.orderBy case final $1 when $1.isNotDefault) 'orderBy': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListFunctionsResponse.fromJson(response);
   }
 
@@ -147,14 +158,18 @@ final class FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
   /// When complete, [Operation.done] will be `true`. If successful,
   /// [Operation.responseAsMessage] will contain the operation's result.
   Future<Operation<Function$, OperationMetadata>> createFunction(
-    CreateFunctionRequest request,
-  ) async {
+    CreateFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/functions',
       queryParameters: {
@@ -162,7 +177,11 @@ final class FunctionService {
           'functionId': $1,
       },
     );
-    final response = await _client.post(url, body: request.function);
+    final response = await _client.post(
+      url,
+      body: request.function,
+      retry: retry ?? noRetry,
+    );
     return Operation.fromJson(
       response,
       OperationHelper(Function$.fromJson, OperationMetadata.fromJson),
@@ -175,21 +194,29 @@ final class FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
   /// When complete, [Operation.done] will be `true`. If successful,
   /// [Operation.responseAsMessage] will contain the operation's result.
   Future<Operation<Function$, OperationMetadata>> updateFunction(
-    UpdateFunctionRequest request,
-  ) async {
+    UpdateFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.function!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.function);
+    final response = await _client.patch(
+      url,
+      body: request.function,
+      retry: retry ?? noRetry,
+    );
     return Operation.fromJson(
       response,
       OperationHelper(Function$.fromJson, OperationMetadata.fromJson),
@@ -204,16 +231,20 @@ final class FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
   /// When complete, [Operation.done] will be `true`. If successful,
   /// [Operation.responseAsMessage] will contain the operation's result.
   Future<Operation<Empty, OperationMetadata>> deleteFunction(
-    DeleteFunctionRequest request,
-  ) async {
+    DeleteFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    final response = await _client.delete(url);
+    final response = await _client.delete(url, retry: retry ?? noRetry);
     return Operation.fromJson(
       response,
       OperationHelper(Empty.fromJson, OperationMetadata.fromJson),
@@ -247,13 +278,21 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<GenerateUploadUrlResponse> generateUploadUrl(
-    GenerateUploadUrlRequest request,
-  ) async {
+    GenerateUploadUrlRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/functions:generateUploadUrl',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return GenerateUploadUrlResponse.fromJson(response);
   }
 
@@ -266,13 +305,21 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<GenerateDownloadUrlResponse> generateDownloadUrl(
-    GenerateDownloadUrlRequest request,
-  ) async {
+    GenerateDownloadUrlRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}:generateDownloadUrl',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return GenerateDownloadUrlResponse.fromJson(response);
   }
 
@@ -281,14 +328,20 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListRuntimesResponse> listRuntimes(ListRuntimesRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListRuntimesResponse> listRuntimes(
+    ListRuntimesRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/runtimes',
       queryParameters: {
         if (request.filter case final $1 when $1.isNotDefault) 'filter': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListRuntimesResponse.fromJson(response);
   }
 
@@ -297,9 +350,13 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}/locations',
       queryParameters: {
@@ -310,7 +367,7 @@ final class FunctionService {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -323,9 +380,19 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.resource}:setIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -335,7 +402,13 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -344,7 +417,7 @@ final class FunctionService {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -359,13 +432,21 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -374,9 +455,13 @@ final class FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}/operations',
       queryParameters: {
@@ -389,7 +474,7 @@ final class FunctionService {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -399,14 +484,17 @@ final class FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -527,8 +615,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Function$> getFunction(GetFunctionRequest request) async {
+  Future<Function$> getFunction(
+    GetFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getFunction case final getFunction?) {
@@ -542,10 +636,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListFunctionsResponse> listFunctions(
-    ListFunctionsRequest request,
-  ) async {
+    ListFunctionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listFunctions case final listFunctions?) {
@@ -562,6 +660,9 @@ base class FakeFunctionService implements FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
@@ -569,8 +670,9 @@ base class FakeFunctionService implements FunctionService {
   /// [Operation.responseAsMessage] will contain the operation's result.
   @override
   Future<Operation<Function$, OperationMetadata>> createFunction(
-    CreateFunctionRequest request,
-  ) async {
+    CreateFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createFunction case final createFunction?) {
@@ -585,6 +687,9 @@ base class FakeFunctionService implements FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
@@ -592,8 +697,9 @@ base class FakeFunctionService implements FunctionService {
   /// [Operation.responseAsMessage] will contain the operation's result.
   @override
   Future<Operation<Function$, OperationMetadata>> updateFunction(
-    UpdateFunctionRequest request,
-  ) async {
+    UpdateFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateFunction case final updateFunction?) {
@@ -610,6 +716,9 @@ base class FakeFunctionService implements FunctionService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
@@ -617,8 +726,9 @@ base class FakeFunctionService implements FunctionService {
   /// [Operation.responseAsMessage] will contain the operation's result.
   @override
   Future<Operation<Empty, OperationMetadata>> deleteFunction(
-    DeleteFunctionRequest request,
-  ) async {
+    DeleteFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteFunction case final deleteFunction?) {
@@ -654,10 +764,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<GenerateUploadUrlResponse> generateUploadUrl(
-    GenerateUploadUrlRequest request,
-  ) async {
+    GenerateUploadUrlRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_generateUploadUrl case final generateUploadUrl?) {
@@ -675,10 +789,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<GenerateDownloadUrlResponse> generateDownloadUrl(
-    GenerateDownloadUrlRequest request,
-  ) async {
+    GenerateDownloadUrlRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_generateDownloadUrl case final generateDownloadUrl?) {
@@ -692,8 +810,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListRuntimesResponse> listRuntimes(ListRuntimesRequest request) async {
+  Future<ListRuntimesResponse> listRuntimes(
+    ListRuntimesRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listRuntimes case final listRuntimes?) {
@@ -707,10 +831,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -728,8 +856,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -744,8 +878,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -765,10 +905,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -782,10 +926,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -799,11 +947,14 @@ base class FakeFunctionService implements FunctionService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {

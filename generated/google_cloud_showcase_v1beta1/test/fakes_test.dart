@@ -24,7 +24,7 @@ import 'package:test/test.dart';
 
 final class MyFakeEcho extends FakeEcho {
   @override
-  Future<EchoResponse> echo(EchoRequest request) async =>
+  Future<EchoResponse> echo(EchoRequest request, {RetryRunner? retry}) async =>
       EchoResponse(content: request.content ?? '');
 }
 

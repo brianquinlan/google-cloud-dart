@@ -31,6 +31,7 @@ library;
 
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:google_cloud_type/type.dart';
 import 'package:http/http.dart' as http;
@@ -121,9 +122,19 @@ final class IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.resource}:setIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -134,9 +145,19 @@ final class IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1/${request.resource}:getIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -151,13 +172,21 @@ final class IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -202,8 +231,14 @@ base class FakeIAMPolicy implements IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -219,8 +254,14 @@ base class FakeIAMPolicy implements IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -240,10 +281,14 @@ base class FakeIAMPolicy implements IAMPolicy {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {

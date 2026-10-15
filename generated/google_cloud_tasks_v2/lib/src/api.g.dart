@@ -33,6 +33,7 @@ import 'package:google_cloud_iam_v1/iam.dart';
 import 'package:google_cloud_location/location.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/rpc.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:http/http.dart' as http;
@@ -99,7 +100,13 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListQueuesResponse> listQueues(ListQueuesRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListQueuesResponse> listQueues(
+    ListQueuesRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/queues',
       queryParameters: {
@@ -110,7 +117,7 @@ final class CloudTasks {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListQueuesResponse.fromJson(response);
   }
 
@@ -119,9 +126,12 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> getQueue(GetQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> getQueue(GetQueueRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Queue.fromJson(response);
   }
 
@@ -141,9 +151,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> createQueue(CreateQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> createQueue(
+    CreateQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.parent}/queues');
-    final response = await _client.post(url, body: request.queue);
+    final response = await _client.post(
+      url,
+      body: request.queue,
+      retry: retry ?? noRetry,
+    );
     return Queue.fromJson(response);
   }
 
@@ -166,14 +186,24 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> updateQueue(UpdateQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> updateQueue(
+    UpdateQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.queue!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.queue);
+    final response = await _client.patch(
+      url,
+      body: request.queue,
+      retry: retry ?? noRetry,
+    );
     return Queue.fromJson(response);
   }
 
@@ -194,9 +224,15 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteQueue(DeleteQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteQueue(
+    DeleteQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Purges a queue by deleting all of its tasks.
@@ -209,9 +245,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> purgeQueue(PurgeQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> purgeQueue(
+    PurgeQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}:purge');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Queue.fromJson(response);
   }
 
@@ -227,9 +273,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> pauseQueue(PauseQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> pauseQueue(
+    PauseQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}:pause');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Queue.fromJson(response);
   }
 
@@ -251,9 +307,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Queue> resumeQueue(ResumeQueueRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Queue> resumeQueue(
+    ResumeQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}:resume');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Queue.fromJson(response);
   }
 
@@ -270,9 +336,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.resource}:getIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -291,9 +367,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.resource}:setIamPolicy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -309,13 +395,21 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -332,7 +426,13 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListTasksResponse> listTasks(ListTasksRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListTasksResponse> listTasks(
+    ListTasksRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.parent}/tasks',
       queryParameters: {
@@ -344,7 +444,7 @@ final class CloudTasks {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListTasksResponse.fromJson(response);
   }
 
@@ -353,7 +453,10 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Task> getTask(GetTaskRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Task> getTask(GetTaskRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}',
       queryParameters: {
@@ -361,7 +464,7 @@ final class CloudTasks {
           'responseView': $1.value,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Task.fromJson(response);
   }
 
@@ -374,9 +477,19 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Task> createTask(CreateTaskRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Task> createTask(
+    CreateTaskRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.parent}/tasks');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Task.fromJson(response);
   }
 
@@ -389,9 +502,15 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteTask(DeleteTaskRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteTask(
+    DeleteTaskRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Forces a task to run now.
@@ -424,9 +543,16 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Task> runTask(RunTaskRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Task> runTask(RunTaskRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v2/${request.name}:run');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Task.fromJson(response);
   }
 
@@ -435,9 +561,13 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v2/${request.name}/locations',
       queryParameters: {
@@ -448,7 +578,7 @@ final class CloudTasks {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -457,9 +587,15 @@ final class CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -552,8 +688,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListQueuesResponse> listQueues(ListQueuesRequest request) async {
+  Future<ListQueuesResponse> listQueues(
+    ListQueuesRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listQueues case final listQueues?) {
@@ -567,8 +709,11 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> getQueue(GetQueueRequest request) async {
+  Future<Queue> getQueue(GetQueueRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getQueue case final getQueue?) {
@@ -593,8 +738,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> createQueue(CreateQueueRequest request) async {
+  Future<Queue> createQueue(
+    CreateQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createQueue case final createQueue?) {
@@ -622,8 +773,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> updateQueue(UpdateQueueRequest request) async {
+  Future<Queue> updateQueue(
+    UpdateQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateQueue case final updateQueue?) {
@@ -649,8 +806,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteQueue(DeleteQueueRequest request) async {
+  Future<void> deleteQueue(
+    DeleteQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteQueue case final deleteQueue?) {
@@ -669,8 +832,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> purgeQueue(PurgeQueueRequest request) async {
+  Future<Queue> purgeQueue(
+    PurgeQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_purgeQueue case final purgeQueue?) {
@@ -691,8 +860,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> pauseQueue(PauseQueueRequest request) async {
+  Future<Queue> pauseQueue(
+    PauseQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_pauseQueue case final pauseQueue?) {
@@ -719,8 +894,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Queue> resumeQueue(ResumeQueueRequest request) async {
+  Future<Queue> resumeQueue(
+    ResumeQueueRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_resumeQueue case final resumeQueue?) {
@@ -742,8 +923,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -767,8 +954,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -789,10 +982,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -814,8 +1011,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListTasksResponse> listTasks(ListTasksRequest request) async {
+  Future<ListTasksResponse> listTasks(
+    ListTasksRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listTasks case final listTasks?) {
@@ -829,8 +1032,11 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Task> getTask(GetTaskRequest request) async {
+  Future<Task> getTask(GetTaskRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getTask case final getTask?) {
@@ -848,8 +1054,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Task> createTask(CreateTaskRequest request) async {
+  Future<Task> createTask(
+    CreateTaskRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createTask case final createTask?) {
@@ -867,8 +1079,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteTask(DeleteTaskRequest request) async {
+  Future<void> deleteTask(
+    DeleteTaskRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteTask case final deleteTask?) {
@@ -907,8 +1125,11 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Task> runTask(RunTaskRequest request) async {
+  Future<Task> runTask(RunTaskRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_runTask case final runTask?) {
@@ -922,10 +1143,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -939,8 +1164,14 @@ base class FakeCloudTasks implements CloudTasks {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {

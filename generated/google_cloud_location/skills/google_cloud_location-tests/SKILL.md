@@ -49,8 +49,9 @@ import 'package:google_cloud_location/testing.dart';
 final class MyFakeLocations extends FakeLocations {
   @override
   Future<Location> getLocation(
-    GetLocationRequest request,
-  ) async {
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Location();
   }

@@ -127,8 +127,9 @@ import 'package:google_cloud_aiplatform_v1beta1/testing.dart';
 final class MyFakeFeatureOnlineStoreService extends FakeFeatureOnlineStoreService {
   @override
   Future<GenerateFetchAccessTokenResponse> generateFetchAccessToken(
-    GenerateFetchAccessTokenRequest request,
-  ) async {
+    GenerateFetchAccessTokenRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return GenerateFetchAccessTokenResponse();
   }

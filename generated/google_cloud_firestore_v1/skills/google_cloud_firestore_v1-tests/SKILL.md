@@ -49,8 +49,9 @@ import 'package:google_cloud_firestore_v1/testing.dart';
 final class MyFakeFirestore extends FakeFirestore {
   @override
   Future<Document> getDocument(
-    GetDocumentRequest request,
-  ) async {
+    GetDocumentRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Document();
   }

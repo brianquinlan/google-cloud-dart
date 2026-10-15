@@ -65,8 +65,9 @@ import 'package:google_cloud_ai_generativelanguage_v1beta/testing.dart';
 final class MyFakeFileService extends FakeFileService {
   @override
   Future<CreateFileResponse> createFile(
-    CreateFileRequest request,
-  ) async {
+    CreateFileRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return CreateFileResponse();
   }

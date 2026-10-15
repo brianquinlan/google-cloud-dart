@@ -49,8 +49,9 @@ import 'package:google_cloud_functions_v2/testing.dart';
 final class MyFakeFunctionService extends FakeFunctionService {
   @override
   Future<Function$> getFunction(
-    GetFunctionRequest request,
-  ) async {
+    GetFunctionRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Function$();
   }

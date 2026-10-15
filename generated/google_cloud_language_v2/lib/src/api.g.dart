@@ -33,6 +33,7 @@ library;
 
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:http/http.dart' as http;
 
@@ -99,11 +100,19 @@ final class LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<AnalyzeSentimentResponse> analyzeSentiment(
-    AnalyzeSentimentRequest request,
-  ) async {
+    AnalyzeSentimentRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/documents:analyzeSentiment');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return AnalyzeSentimentResponse.fromJson(response);
   }
 
@@ -114,11 +123,19 @@ final class LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<AnalyzeEntitiesResponse> analyzeEntities(
-    AnalyzeEntitiesRequest request,
-  ) async {
+    AnalyzeEntitiesRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/documents:analyzeEntities');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return AnalyzeEntitiesResponse.fromJson(response);
   }
 
@@ -127,9 +144,19 @@ final class LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ClassifyTextResponse> classifyText(ClassifyTextRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ClassifyTextResponse> classifyText(
+    ClassifyTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/documents:classifyText');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return ClassifyTextResponse.fromJson(response);
   }
 
@@ -138,9 +165,19 @@ final class LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ModerateTextResponse> moderateText(ModerateTextRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ModerateTextResponse> moderateText(
+    ModerateTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/documents:moderateText');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return ModerateTextResponse.fromJson(response);
   }
 
@@ -149,9 +186,19 @@ final class LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<AnnotateTextResponse> annotateText(AnnotateTextRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<AnnotateTextResponse> annotateText(
+    AnnotateTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v2/documents:annotateText');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return AnnotateTextResponse.fromJson(response);
   }
 
@@ -207,10 +254,14 @@ base class FakeLanguageService implements LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<AnalyzeSentimentResponse> analyzeSentiment(
-    AnalyzeSentimentRequest request,
-  ) async {
+    AnalyzeSentimentRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_analyzeSentiment case final analyzeSentiment?) {
@@ -226,10 +277,14 @@ base class FakeLanguageService implements LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<AnalyzeEntitiesResponse> analyzeEntities(
-    AnalyzeEntitiesRequest request,
-  ) async {
+    AnalyzeEntitiesRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_analyzeEntities case final analyzeEntities?) {
@@ -243,8 +298,14 @@ base class FakeLanguageService implements LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ClassifyTextResponse> classifyText(ClassifyTextRequest request) async {
+  Future<ClassifyTextResponse> classifyText(
+    ClassifyTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_classifyText case final classifyText?) {
@@ -258,8 +319,14 @@ base class FakeLanguageService implements LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ModerateTextResponse> moderateText(ModerateTextRequest request) async {
+  Future<ModerateTextResponse> moderateText(
+    ModerateTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_moderateText case final moderateText?) {
@@ -273,8 +340,14 @@ base class FakeLanguageService implements LanguageService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<AnnotateTextResponse> annotateText(AnnotateTextRequest request) async {
+  Future<AnnotateTextResponse> annotateText(
+    AnnotateTextRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_annotateText case final annotateText?) {

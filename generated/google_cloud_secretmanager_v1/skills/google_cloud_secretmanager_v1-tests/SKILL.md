@@ -49,8 +49,9 @@ import 'package:google_cloud_secretmanager_v1/testing.dart';
 final class MyFakeSecretManagerService extends FakeSecretManagerService {
   @override
   Future<SecretVersion> enableManagedRotation(
-    EnableManagedRotationRequest request,
-  ) async {
+    EnableManagedRotationRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return SecretVersion();
   }

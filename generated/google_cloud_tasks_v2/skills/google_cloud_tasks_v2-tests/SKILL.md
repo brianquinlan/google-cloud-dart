@@ -49,8 +49,9 @@ import 'package:google_cloud_tasks_v2/testing.dart';
 final class MyFakeCloudTasks extends FakeCloudTasks {
   @override
   Future<Task> getTask(
-    GetTaskRequest request,
-  ) async {
+    GetTaskRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Task();
   }

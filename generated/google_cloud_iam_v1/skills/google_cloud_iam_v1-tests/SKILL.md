@@ -49,8 +49,9 @@ import 'package:google_cloud_iam_v1/testing.dart';
 final class MyFakeIAMPolicy extends FakeIAMPolicy {
   @override
   Future<Policy> setIamPolicy(
-    SetIamPolicyRequest request,
-  ) async {
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Policy();
   }

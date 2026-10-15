@@ -35,6 +35,7 @@ import 'package:google_cloud_location/location.dart';
 import 'package:google_cloud_longrunning/longrunning.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/rpc.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:http/http.dart' as http;
@@ -101,9 +102,19 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataBody(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataBody(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/repeat:body');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return RepeatResponse.fromJson(response);
   }
 
@@ -114,7 +125,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataBodyInfo(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataBodyInfo(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/repeat:bodyinfo',
       queryParameters: {
@@ -133,7 +150,11 @@ final class Compliance {
         if (request.pDouble case final $1?) 'pDouble': '${$1}',
       },
     );
-    final response = await _client.post(url, body: request.info);
+    final response = await _client.post(
+      url,
+      body: request.info,
+      retry: retry ?? noRetry,
+    );
     return RepeatResponse.fromJson(response);
   }
 
@@ -143,7 +164,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataQuery(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataQuery(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/repeat:query',
       queryParameters: {
@@ -287,7 +314,7 @@ final class Compliance {
         if (request.pDouble case final $1?) 'pDouble': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return RepeatResponse.fromJson(response);
   }
 
@@ -298,7 +325,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataSimplePath(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataSimplePath(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path:
           '/v1beta1/repeat/${request.info!.fString}/${request.info!.fInt32}/${request.info!.fDouble}/${request.info!.fBool}/${request.info!.fKingdom}:simplepath',
@@ -443,7 +476,7 @@ final class Compliance {
         if (request.pDouble case final $1?) 'pDouble': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return RepeatResponse.fromJson(response);
   }
 
@@ -452,7 +485,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataPathResource(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataPathResource(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path:
           '/v1beta1/repeat/${request.info!.fString}/${request.info!.fChild!.fString}/bool/${request.info!.fBool}:pathresource',
@@ -597,7 +636,7 @@ final class Compliance {
         if (request.pDouble case final $1?) 'pDouble': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return RepeatResponse.fromJson(response);
   }
 
@@ -606,9 +645,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<RepeatResponse> repeatDataPathTrailingResource(
-    RepeatRequest request,
-  ) async {
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path:
           '/v1beta1/repeat/${request.info!.fString}/${request.info!.fChild!.fString}:pathtrailingresource',
@@ -753,7 +796,7 @@ final class Compliance {
         if (request.pDouble case final $1?) 'pDouble': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return RepeatResponse.fromJson(response);
   }
 
@@ -762,9 +805,19 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataBodyPut(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataBodyPut(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/repeat:bodyput');
-    final response = await _client.put(url, body: request);
+    final response = await _client.put(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return RepeatResponse.fromJson(response);
   }
 
@@ -773,9 +826,19 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<RepeatResponse> repeatDataBodyPatch(RepeatRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<RepeatResponse> repeatDataBodyPatch(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/repeat:bodypatch');
-    final response = await _client.patch(url, body: request);
+    final response = await _client.patch(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return RepeatResponse.fromJson(response);
   }
 
@@ -789,7 +852,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<EnumResponse> getEnum(EnumRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<EnumResponse> getEnum(
+    EnumRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/compliance/enum',
       queryParameters: {
@@ -797,7 +866,7 @@ final class Compliance {
           'unknownEnum': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return EnumResponse.fromJson(response);
   }
 
@@ -811,7 +880,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<EnumResponse> verifyEnum(EnumResponse request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<EnumResponse> verifyEnum(
+    EnumResponse request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/compliance/enum',
       queryParameters: {
@@ -821,7 +896,7 @@ final class Compliance {
           'continent': $1.value,
       },
     );
-    final response = await _client.post(url);
+    final response = await _client.post(url, retry: retry ?? noRetry);
     return EnumResponse.fromJson(response);
   }
 
@@ -830,9 +905,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -843,7 +922,7 @@ final class Compliance {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -852,9 +931,15 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -863,11 +948,21 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -876,7 +971,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -885,7 +986,7 @@ final class Compliance {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -894,13 +995,21 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -909,9 +1018,13 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -925,7 +1038,7 @@ final class Compliance {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -935,14 +1048,17 @@ final class Compliance {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -951,9 +1067,15 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -961,9 +1083,15 @@ final class Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -1075,8 +1203,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataBody(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataBody(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataBody case final repeatDataBody?) {
@@ -1092,8 +1226,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataBodyInfo(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataBodyInfo(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataBodyInfo case final repeatDataBodyInfo?) {
@@ -1108,8 +1248,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataQuery(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataQuery(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataQuery case final repeatDataQuery?) {
@@ -1125,8 +1271,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataSimplePath(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataSimplePath(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataSimplePath case final repeatDataSimplePath?) {
@@ -1140,8 +1292,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataPathResource(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataPathResource(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataPathResource case final repeatDataPathResource?) {
@@ -1155,10 +1313,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<RepeatResponse> repeatDataPathTrailingResource(
-    RepeatRequest request,
-  ) async {
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataPathTrailingResource
@@ -1173,8 +1335,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataBodyPut(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataBodyPut(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataBodyPut case final repeatDataBodyPut?) {
@@ -1188,8 +1356,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<RepeatResponse> repeatDataBodyPatch(RepeatRequest request) async {
+  Future<RepeatResponse> repeatDataBodyPatch(
+    RepeatRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_repeatDataBodyPatch case final repeatDataBodyPatch?) {
@@ -1208,8 +1382,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<EnumResponse> getEnum(EnumRequest request) async {
+  Future<EnumResponse> getEnum(
+    EnumRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getEnum case final getEnum?) {
@@ -1228,8 +1408,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<EnumResponse> verifyEnum(EnumResponse request) async {
+  Future<EnumResponse> verifyEnum(
+    EnumResponse request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_verifyEnum case final verifyEnum?) {
@@ -1243,10 +1429,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -1260,8 +1450,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -1275,8 +1471,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -1290,8 +1492,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -1305,10 +1513,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -1322,10 +1534,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -1339,11 +1555,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -1357,8 +1576,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -1372,8 +1597,14 @@ base class FakeCompliance implements Compliance {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -1449,9 +1680,16 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<EchoResponse> echo(EchoRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<EchoResponse> echo(EchoRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:echo');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return EchoResponse.fromJson(response);
   }
 
@@ -1465,11 +1703,19 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<EchoErrorDetailsResponse> echoErrorDetails(
-    EchoErrorDetailsRequest request,
-  ) async {
+    EchoErrorDetailsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:error-details');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return EchoErrorDetailsResponse.fromJson(response);
   }
 
@@ -1484,11 +1730,19 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<FailEchoWithDetailsResponse> failEchoWithDetails(
-    FailEchoWithDetailsRequest request,
-  ) async {
+    FailEchoWithDetailsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:failWithDetails');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return FailEchoWithDetailsResponse.fromJson(response);
   }
 
@@ -1498,10 +1752,18 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Stream<EchoResponse> expand(ExpandRequest request) {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Stream<EchoResponse> expand(ExpandRequest request, {RetryRunner? retry}) {
     final url = _endPoint.replace(path: '/v1beta1/echo:expand');
     return _client
-        .postStreaming(url, body: request, enableSse: true)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: true,
+          retry: retry ?? noRetry,
+        )
         .map(EchoResponse.fromJson);
   }
 
@@ -1511,9 +1773,19 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<PagedExpandResponse> pagedExpand(PagedExpandRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<PagedExpandResponse> pagedExpand(
+    PagedExpandRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:pagedExpand');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return PagedExpandResponse.fromJson(response);
   }
 
@@ -1524,11 +1796,19 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<PagedExpandResponse> pagedExpandLegacy(
-    PagedExpandLegacyRequest request,
-  ) async {
+    PagedExpandLegacyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:pagedExpandLegacy');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return PagedExpandResponse.fromJson(response);
   }
 
@@ -1541,13 +1821,21 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<PagedExpandLegacyMappedResponse> pagedExpandLegacyMapped(
-    PagedExpandRequest request,
-  ) async {
+    PagedExpandRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/echo:pagedExpandLegacyMapped',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return PagedExpandLegacyMappedResponse.fromJson(response);
   }
 
@@ -1558,16 +1846,24 @@ final class Echo {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
   /// When complete, [Operation.done] will be `true`. If successful,
   /// [Operation.responseAsMessage] will contain the operation's result.
   Future<Operation<WaitResponse, WaitMetadata>> wait(
-    WaitRequest request,
-  ) async {
+    WaitRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:wait');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Operation.fromJson(
       response,
       OperationHelper(WaitResponse.fromJson, WaitMetadata.fromJson),
@@ -1581,9 +1877,19 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<BlockResponse> block(BlockRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<BlockResponse> block(
+    BlockRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/echo:block');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return BlockResponse.fromJson(response);
   }
 
@@ -1592,9 +1898,13 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -1605,7 +1915,7 @@ final class Echo {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -1614,9 +1924,15 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -1625,11 +1941,21 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -1638,7 +1964,13 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -1647,7 +1979,7 @@ final class Echo {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -1656,13 +1988,21 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -1671,9 +2011,13 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -1687,7 +2031,7 @@ final class Echo {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -1697,14 +2041,17 @@ final class Echo {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -1713,9 +2060,15 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -1723,9 +2076,15 @@ final class Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -1847,8 +2206,11 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<EchoResponse> echo(EchoRequest request) async {
+  Future<EchoResponse> echo(EchoRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_echo case final echo?) {
@@ -1867,10 +2229,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<EchoErrorDetailsResponse> echoErrorDetails(
-    EchoErrorDetailsRequest request,
-  ) async {
+    EchoErrorDetailsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_echoErrorDetails case final echoErrorDetails?) {
@@ -1890,10 +2256,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<FailEchoWithDetailsResponse> failEchoWithDetails(
-    FailEchoWithDetailsRequest request,
-  ) async {
+    FailEchoWithDetailsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_failEchoWithDetails case final failEchoWithDetails?) {
@@ -1908,8 +2278,11 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Stream<EchoResponse> expand(ExpandRequest request) {
+  Stream<EchoResponse> expand(ExpandRequest request, {RetryRunner? retry}) {
     if (isClosed) throw StateError('Service is closed');
     if (_expand case final expand?) {
       return expand(request);
@@ -1923,8 +2296,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<PagedExpandResponse> pagedExpand(PagedExpandRequest request) async {
+  Future<PagedExpandResponse> pagedExpand(
+    PagedExpandRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_pagedExpand case final pagedExpand?) {
@@ -1940,10 +2319,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<PagedExpandResponse> pagedExpandLegacy(
-    PagedExpandLegacyRequest request,
-  ) async {
+    PagedExpandLegacyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_pagedExpandLegacy case final pagedExpandLegacy?) {
@@ -1961,10 +2344,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<PagedExpandLegacyMappedResponse> pagedExpandLegacyMapped(
-    PagedExpandRequest request,
-  ) async {
+    PagedExpandRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_pagedExpandLegacyMapped case final pagedExpandLegacyMapped?) {
@@ -1980,6 +2367,9 @@ base class FakeEcho implements Echo {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
@@ -1987,8 +2377,9 @@ base class FakeEcho implements Echo {
   /// [Operation.responseAsMessage] will contain the operation's result.
   @override
   Future<Operation<WaitResponse, WaitMetadata>> wait(
-    WaitRequest request,
-  ) async {
+    WaitRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_wait case final wait?) {
@@ -2004,8 +2395,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<BlockResponse> block(BlockRequest request) async {
+  Future<BlockResponse> block(
+    BlockRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_block case final block?) {
@@ -2019,10 +2416,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -2036,8 +2437,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -2051,8 +2458,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -2066,8 +2479,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -2081,10 +2500,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -2098,10 +2521,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -2115,11 +2542,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -2133,8 +2563,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -2148,8 +2584,14 @@ base class FakeEcho implements Echo {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -2219,9 +2661,19 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<User> createUser(CreateUserRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<User> createUser(
+    CreateUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/users');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return User.fromJson(response);
   }
 
@@ -2230,9 +2682,12 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<User> getUser(GetUserRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<User> getUser(GetUserRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return User.fromJson(response);
   }
 
@@ -2241,14 +2696,24 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<User> updateUser(UpdateUserRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<User> updateUser(
+    UpdateUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.user!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.user);
+    final response = await _client.patch(
+      url,
+      body: request.user,
+      retry: retry ?? noRetry,
+    );
     return User.fromJson(response);
   }
 
@@ -2257,9 +2722,15 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteUser(DeleteUserRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteUser(
+    DeleteUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Lists all users.
@@ -2267,7 +2738,13 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListUsersResponse> listUsers(ListUsersRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListUsersResponse> listUsers(
+    ListUsersRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/users',
       queryParameters: {
@@ -2277,7 +2754,7 @@ final class Identity {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListUsersResponse.fromJson(response);
   }
 
@@ -2286,9 +2763,13 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -2299,7 +2780,7 @@ final class Identity {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -2308,9 +2789,15 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -2319,11 +2806,21 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -2332,7 +2829,13 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -2341,7 +2844,7 @@ final class Identity {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -2350,13 +2853,21 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -2365,9 +2876,13 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -2381,7 +2896,7 @@ final class Identity {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -2391,14 +2906,17 @@ final class Identity {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -2407,9 +2925,15 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -2417,9 +2941,15 @@ final class Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -2506,8 +3036,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<User> createUser(CreateUserRequest request) async {
+  Future<User> createUser(
+    CreateUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createUser case final createUser?) {
@@ -2521,8 +3057,11 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<User> getUser(GetUserRequest request) async {
+  Future<User> getUser(GetUserRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getUser case final getUser?) {
@@ -2536,8 +3075,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<User> updateUser(UpdateUserRequest request) async {
+  Future<User> updateUser(
+    UpdateUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateUser case final updateUser?) {
@@ -2551,8 +3096,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteUser(DeleteUserRequest request) async {
+  Future<void> deleteUser(
+    DeleteUserRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteUser case final deleteUser?) {
@@ -2566,8 +3117,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListUsersResponse> listUsers(ListUsersRequest request) async {
+  Future<ListUsersResponse> listUsers(
+    ListUsersRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listUsers case final listUsers?) {
@@ -2581,10 +3138,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -2598,8 +3159,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -2613,8 +3180,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -2628,8 +3201,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -2643,10 +3222,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -2660,10 +3243,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -2677,11 +3264,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -2695,8 +3285,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -2710,8 +3306,14 @@ base class FakeIdentity implements Identity {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -2784,9 +3386,19 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Room> createRoom(CreateRoomRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Room> createRoom(
+    CreateRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/rooms');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Room.fromJson(response);
   }
 
@@ -2795,9 +3407,12 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Room> getRoom(GetRoomRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Room> getRoom(GetRoomRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Room.fromJson(response);
   }
 
@@ -2806,14 +3421,24 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Room> updateRoom(UpdateRoomRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Room> updateRoom(
+    UpdateRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.room!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.room);
+    final response = await _client.patch(
+      url,
+      body: request.room,
+      retry: retry ?? noRetry,
+    );
     return Room.fromJson(response);
   }
 
@@ -2822,9 +3447,15 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteRoom(DeleteRoomRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteRoom(
+    DeleteRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Lists all chat rooms.
@@ -2832,7 +3463,13 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListRoomsResponse> listRooms(ListRoomsRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListRoomsResponse> listRooms(
+    ListRoomsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/rooms',
       queryParameters: {
@@ -2842,7 +3479,7 @@ final class Messaging {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListRoomsResponse.fromJson(response);
   }
 
@@ -2853,9 +3490,19 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Blurb> createBlurb(CreateBlurbRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Blurb> createBlurb(
+    CreateBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.parent}/blurbs');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Blurb.fromJson(response);
   }
 
@@ -2864,9 +3511,12 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Blurb> getBlurb(GetBlurbRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Blurb> getBlurb(GetBlurbRequest request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Blurb.fromJson(response);
   }
 
@@ -2875,14 +3525,24 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Blurb> updateBlurb(UpdateBlurbRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Blurb> updateBlurb(
+    UpdateBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.blurb!.name}',
       queryParameters: {
         if (request.updateMask case final $1?) 'updateMask': $1.toJson(),
       },
     );
-    final response = await _client.patch(url, body: request.blurb);
+    final response = await _client.patch(
+      url,
+      body: request.blurb,
+      retry: retry ?? noRetry,
+    );
     return Blurb.fromJson(response);
   }
 
@@ -2891,9 +3551,15 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteBlurb(DeleteBlurbRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteBlurb(
+    DeleteBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Lists blurbs for a specific chat room or user profile depending on the
@@ -2902,7 +3568,13 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListBlurbsResponse> listBlurbs(ListBlurbsRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListBlurbsResponse> listBlurbs(
+    ListBlurbsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.parent}/blurbs',
       queryParameters: {
@@ -2912,7 +3584,7 @@ final class Messaging {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListBlurbsResponse.fromJson(response);
   }
 
@@ -2924,18 +3596,26 @@ final class Messaging {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
   /// When complete, [Operation.done] will be `true`. If successful,
   /// [Operation.responseAsMessage] will contain the operation's result.
   Future<Operation<SearchBlurbsResponse, SearchBlurbsMetadata>> searchBlurbs(
-    SearchBlurbsRequest request,
-  ) async {
+    SearchBlurbsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.parent}/blurbs:search',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Operation.fromJson(
       response,
       OperationHelper(
@@ -2951,12 +3631,23 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Stream<StreamBlurbsResponse> streamBlurbs(StreamBlurbsRequest request) {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Stream<StreamBlurbsResponse> streamBlurbs(
+    StreamBlurbsRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/blurbs:stream',
     );
     return _client
-        .postStreaming(url, body: request, enableSse: true)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: true,
+          retry: retry ?? noRetry,
+        )
         .map(StreamBlurbsResponse.fromJson);
   }
 
@@ -2965,9 +3656,13 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -2978,7 +3673,7 @@ final class Messaging {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -2987,9 +3682,15 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -2998,11 +3699,21 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -3011,7 +3722,13 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -3020,7 +3737,7 @@ final class Messaging {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -3029,13 +3746,21 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -3044,9 +3769,13 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -3060,7 +3789,7 @@ final class Messaging {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -3070,14 +3799,17 @@ final class Messaging {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -3086,9 +3818,15 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -3096,9 +3834,15 @@ final class Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -3215,8 +3959,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Room> createRoom(CreateRoomRequest request) async {
+  Future<Room> createRoom(
+    CreateRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createRoom case final createRoom?) {
@@ -3230,8 +3980,11 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Room> getRoom(GetRoomRequest request) async {
+  Future<Room> getRoom(GetRoomRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getRoom case final getRoom?) {
@@ -3245,8 +3998,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Room> updateRoom(UpdateRoomRequest request) async {
+  Future<Room> updateRoom(
+    UpdateRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateRoom case final updateRoom?) {
@@ -3260,8 +4019,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteRoom(DeleteRoomRequest request) async {
+  Future<void> deleteRoom(
+    DeleteRoomRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteRoom case final deleteRoom?) {
@@ -3275,8 +4040,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListRoomsResponse> listRooms(ListRoomsRequest request) async {
+  Future<ListRoomsResponse> listRooms(
+    ListRoomsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listRooms case final listRooms?) {
@@ -3292,8 +4063,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Blurb> createBlurb(CreateBlurbRequest request) async {
+  Future<Blurb> createBlurb(
+    CreateBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createBlurb case final createBlurb?) {
@@ -3307,8 +4084,11 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Blurb> getBlurb(GetBlurbRequest request) async {
+  Future<Blurb> getBlurb(GetBlurbRequest request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getBlurb case final getBlurb?) {
@@ -3322,8 +4102,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Blurb> updateBlurb(UpdateBlurbRequest request) async {
+  Future<Blurb> updateBlurb(
+    UpdateBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_updateBlurb case final updateBlurb?) {
@@ -3337,8 +4123,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteBlurb(DeleteBlurbRequest request) async {
+  Future<void> deleteBlurb(
+    DeleteBlurbRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteBlurb case final deleteBlurb?) {
@@ -3353,8 +4145,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListBlurbsResponse> listBlurbs(ListBlurbsRequest request) async {
+  Future<ListBlurbsResponse> listBlurbs(
+    ListBlurbsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listBlurbs case final listBlurbs?) {
@@ -3371,6 +4169,9 @@ base class FakeMessaging implements Messaging {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// Returns an [Operation] representing the status of the long-running
   /// operation.
   ///
@@ -3378,8 +4179,9 @@ base class FakeMessaging implements Messaging {
   /// [Operation.responseAsMessage] will contain the operation's result.
   @override
   Future<Operation<SearchBlurbsResponse, SearchBlurbsMetadata>> searchBlurbs(
-    SearchBlurbsRequest request,
-  ) async {
+    SearchBlurbsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_searchBlurbs case final searchBlurbs?) {
@@ -3394,8 +4196,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Stream<StreamBlurbsResponse> streamBlurbs(StreamBlurbsRequest request) {
+  Stream<StreamBlurbsResponse> streamBlurbs(
+    StreamBlurbsRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_streamBlurbs case final streamBlurbs?) {
       return streamBlurbs(request);
@@ -3408,10 +4216,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -3425,8 +4237,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -3440,8 +4258,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -3455,8 +4279,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -3470,10 +4300,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -3487,10 +4321,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -3504,11 +4342,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -3522,8 +4363,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -3537,8 +4384,14 @@ base class FakeMessaging implements Messaging {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -3611,9 +4464,19 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<UploadMediaResponse> uploadMedia(UploadMediaRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<UploadMediaResponse> uploadMedia(
+    UploadMediaRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/files:upload');
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return UploadMediaResponse.fromJson(response);
   }
 
@@ -3622,9 +4485,13 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -3635,7 +4502,7 @@ final class ResumableUploadService {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -3644,9 +4511,15 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -3655,11 +4528,21 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -3668,7 +4551,13 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -3677,7 +4566,7 @@ final class ResumableUploadService {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -3686,13 +4575,21 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -3701,9 +4598,13 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -3717,7 +4618,7 @@ final class ResumableUploadService {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -3727,14 +4628,17 @@ final class ResumableUploadService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -3743,9 +4647,15 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -3753,9 +4663,15 @@ final class ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -3831,8 +4747,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<UploadMediaResponse> uploadMedia(UploadMediaRequest request) async {
+  Future<UploadMediaResponse> uploadMedia(
+    UploadMediaRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_uploadMedia case final uploadMedia?) {
@@ -3846,10 +4768,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -3863,8 +4789,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -3878,8 +4810,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -3893,8 +4831,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -3908,10 +4852,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -3925,10 +4873,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -3942,11 +4894,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -3960,8 +4915,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -3975,8 +4936,14 @@ base class FakeResumableUploadService implements ResumableUploadService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -4050,9 +5017,19 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Sequence> createSequence(CreateSequenceRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Sequence> createSequence(
+    CreateSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/sequences');
-    final response = await _client.post(url, body: request.sequence);
+    final response = await _client.post(
+      url,
+      body: request.sequence,
+      retry: retry ?? noRetry,
+    );
     return Sequence.fromJson(response);
   }
 
@@ -4061,11 +5038,19 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<StreamingSequence> createStreamingSequence(
-    CreateStreamingSequenceRequest request,
-  ) async {
+    CreateStreamingSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/streamingSequences');
-    final response = await _client.post(url, body: request.streamingSequence);
+    final response = await _client.post(
+      url,
+      body: request.streamingSequence,
+      retry: retry ?? noRetry,
+    );
     return StreamingSequence.fromJson(response);
   }
 
@@ -4075,11 +5060,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<SequenceReport> getSequenceReport(
-    GetSequenceReportRequest request,
-  ) async {
+    GetSequenceReportRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return SequenceReport.fromJson(response);
   }
 
@@ -4089,11 +5078,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<StreamingSequenceReport> getStreamingSequenceReport(
-    GetStreamingSequenceReportRequest request,
-  ) async {
+    GetStreamingSequenceReportRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return StreamingSequenceReport.fromJson(response);
   }
 
@@ -4102,9 +5095,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> attemptSequence(AttemptSequenceRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> attemptSequence(
+    AttemptSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.post(url, body: request);
+    await _client.post(url, body: request, retry: retry ?? noRetry);
   }
 
   /// Attempts a server streaming call with a sequence of responses
@@ -4115,12 +5114,21 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Stream<AttemptStreamingSequenceResponse> attemptStreamingSequence(
-    AttemptStreamingSequenceRequest request,
-  ) {
+    AttemptStreamingSequenceRequest request, {
+    RetryRunner? retry,
+  }) {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:stream');
     return _client
-        .postStreaming(url, body: request, enableSse: true)
+        .postStreaming(
+          url,
+          body: request,
+          enableSse: true,
+          retry: retry ?? noRetry,
+        )
         .map(AttemptStreamingSequenceResponse.fromJson);
   }
 
@@ -4129,9 +5137,13 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -4142,7 +5154,7 @@ final class SequenceService {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -4151,9 +5163,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -4162,11 +5180,21 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -4175,7 +5203,13 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -4184,7 +5218,7 @@ final class SequenceService {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -4193,13 +5227,21 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -4208,9 +5250,13 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -4224,7 +5270,7 @@ final class SequenceService {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -4234,14 +5280,17 @@ final class SequenceService {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -4250,9 +5299,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -4260,9 +5315,15 @@ final class SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -4370,8 +5431,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Sequence> createSequence(CreateSequenceRequest request) async {
+  Future<Sequence> createSequence(
+    CreateSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createSequence case final createSequence?) {
@@ -4385,10 +5452,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<StreamingSequence> createStreamingSequence(
-    CreateStreamingSequenceRequest request,
-  ) async {
+    CreateStreamingSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createStreamingSequence case final createStreamingSequence?) {
@@ -4403,10 +5474,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<SequenceReport> getSequenceReport(
-    GetSequenceReportRequest request,
-  ) async {
+    GetSequenceReportRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getSequenceReport case final getSequenceReport?) {
@@ -4421,10 +5496,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<StreamingSequenceReport> getStreamingSequenceReport(
-    GetStreamingSequenceReportRequest request,
-  ) async {
+    GetStreamingSequenceReportRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getStreamingSequenceReport case final getStreamingSequenceReport?) {
@@ -4438,8 +5517,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> attemptSequence(AttemptSequenceRequest request) async {
+  Future<void> attemptSequence(
+    AttemptSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_attemptSequence case final attemptSequence?) {
@@ -4456,10 +5541,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Stream<AttemptStreamingSequenceResponse> attemptStreamingSequence(
-    AttemptStreamingSequenceRequest request,
-  ) {
+    AttemptStreamingSequenceRequest request, {
+    RetryRunner? retry,
+  }) {
     if (isClosed) throw StateError('Service is closed');
     if (_attemptStreamingSequence case final attemptStreamingSequence?) {
       return attemptStreamingSequence(request);
@@ -4472,10 +5561,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -4489,8 +5582,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -4504,8 +5603,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -4519,8 +5624,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -4534,10 +5645,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -4551,10 +5666,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -4568,11 +5687,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -4586,8 +5708,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -4601,8 +5729,14 @@ base class FakeSequenceService implements SequenceService {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {
@@ -4679,9 +5813,19 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Session> createSession(CreateSessionRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Session> createSession(
+    CreateSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/sessions');
-    final response = await _client.post(url, body: request.session);
+    final response = await _client.post(
+      url,
+      body: request.session,
+      retry: retry ?? noRetry,
+    );
     return Session.fromJson(response);
   }
 
@@ -4690,9 +5834,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Session> getSession(GetSessionRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Session> getSession(
+    GetSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Session.fromJson(response);
   }
 
@@ -4701,7 +5851,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListSessionsResponse> listSessions(ListSessionsRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListSessionsResponse> listSessions(
+    ListSessionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/sessions',
       queryParameters: {
@@ -4711,7 +5867,7 @@ final class Testing {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListSessionsResponse.fromJson(response);
   }
 
@@ -4720,9 +5876,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteSession(DeleteSessionRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteSession(
+    DeleteSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Report on the status of a session.
@@ -4732,11 +5894,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ReportSessionResponse> reportSession(
-    ReportSessionRequest request,
-  ) async {
+    ReportSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:report');
-    final response = await _client.post(url);
+    final response = await _client.post(url, retry: retry ?? noRetry);
     return ReportSessionResponse.fromJson(response);
   }
 
@@ -4745,7 +5911,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<ListTestsResponse> listTests(ListTestsRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<ListTestsResponse> listTests(
+    ListTestsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.parent}/tests',
       queryParameters: {
@@ -4755,7 +5927,7 @@ final class Testing {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListTestsResponse.fromJson(response);
   }
 
@@ -4769,9 +5941,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteTest(DeleteTestRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteTest(
+    DeleteTestRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Register a response to a test.
@@ -4782,7 +5960,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<VerifyTestResponse> verifyTest(VerifyTestRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<VerifyTestResponse> verifyTest(
+    VerifyTestRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}:check',
       queryParameters: {
@@ -4792,7 +5976,7 @@ final class Testing {
           'answers': $1.map((e) => encodeBytes(e)!),
       },
     );
-    final response = await _client.post(url);
+    final response = await _client.post(url, retry: retry ?? noRetry);
     return VerifyTestResponse.fromJson(response);
   }
 
@@ -4801,9 +5985,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.name}/locations',
       queryParameters: {
@@ -4814,7 +6002,7 @@ final class Testing {
           'pageToken': $1,
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListLocationsResponse.fromJson(response);
   }
 
@@ -4823,9 +6011,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Location> getLocation(GetLocationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Location.fromJson(response);
   }
 
@@ -4834,11 +6028,21 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:setIamPolicy',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return Policy.fromJson(response);
   }
 
@@ -4847,7 +6051,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:getIamPolicy',
       queryParameters: {
@@ -4856,7 +6066,7 @@ final class Testing {
           'options.requestedPolicyVersion': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Policy.fromJson(response);
   }
 
@@ -4865,13 +6075,21 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.resource}:testIamPermissions',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(
+      url,
+      body: request,
+      retry: retry ?? noRetry,
+    );
     return TestIamPermissionsResponse.fromJson(response);
   }
 
@@ -4880,9 +6098,13 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(
       path: '/v1beta1/operations',
       queryParameters: {
@@ -4896,7 +6118,7 @@ final class Testing {
           'returnPartialSuccess': '${$1}',
       },
     );
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return ListOperationsResponse.fromJson(response);
   }
 
@@ -4906,14 +6128,17 @@ final class Testing {
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
   ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  ///
   /// This method can be used to get the current status of a long-running
   /// operation.
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    final response = await _client.get(url);
+    final response = await _client.get(url, retry: retry ?? noRetry);
     return Operation.fromJson(response, request.operationHelper);
   }
 
@@ -4922,9 +6147,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}');
-    await _client.delete(url);
+    await _client.delete(url, retry: retry ?? noRetry);
   }
 
   /// Provides the `Operations` service functionality in this service.
@@ -4932,9 +6163,15 @@ final class Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     final url = _endPoint.replace(path: '/v1beta1/${request.name}:cancel');
-    await _client.post(url);
+    await _client.post(url, retry: retry ?? noRetry);
   }
 
   /// Closes the client and cleans up any resources associated with it.
@@ -5038,8 +6275,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Session> createSession(CreateSessionRequest request) async {
+  Future<Session> createSession(
+    CreateSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_createSession case final createSession?) {
@@ -5053,8 +6296,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Session> getSession(GetSessionRequest request) async {
+  Future<Session> getSession(
+    GetSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getSession case final getSession?) {
@@ -5068,8 +6317,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListSessionsResponse> listSessions(ListSessionsRequest request) async {
+  Future<ListSessionsResponse> listSessions(
+    ListSessionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listSessions case final listSessions?) {
@@ -5083,8 +6338,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteSession(DeleteSessionRequest request) async {
+  Future<void> deleteSession(
+    DeleteSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteSession case final deleteSession?) {
@@ -5100,10 +6361,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ReportSessionResponse> reportSession(
-    ReportSessionRequest request,
-  ) async {
+    ReportSessionRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_reportSession case final reportSession?) {
@@ -5117,8 +6382,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<ListTestsResponse> listTests(ListTestsRequest request) async {
+  Future<ListTestsResponse> listTests(
+    ListTestsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listTests case final listTests?) {
@@ -5137,8 +6408,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteTest(DeleteTestRequest request) async {
+  Future<void> deleteTest(
+    DeleteTestRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteTest case final deleteTest?) {
@@ -5155,8 +6432,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<VerifyTestResponse> verifyTest(VerifyTestRequest request) async {
+  Future<VerifyTestResponse> verifyTest(
+    VerifyTestRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_verifyTest case final verifyTest?) {
@@ -5170,10 +6453,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListLocationsResponse> listLocations(
-    ListLocationsRequest request,
-  ) async {
+    ListLocationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listLocations case final listLocations?) {
@@ -5187,8 +6474,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Location> getLocation(GetLocationRequest request) async {
+  Future<Location> getLocation(
+    GetLocationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getLocation case final getLocation?) {
@@ -5202,8 +6495,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> setIamPolicy(SetIamPolicyRequest request) async {
+  Future<Policy> setIamPolicy(
+    SetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_setIamPolicy case final setIamPolicy?) {
@@ -5217,8 +6516,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<Policy> getIamPolicy(GetIamPolicyRequest request) async {
+  Future<Policy> getIamPolicy(
+    GetIamPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getIamPolicy case final getIamPolicy?) {
@@ -5232,10 +6537,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<TestIamPermissionsResponse> testIamPermissions(
-    TestIamPermissionsRequest request,
-  ) async {
+    TestIamPermissionsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_testIamPermissions case final testIamPermissions?) {
@@ -5249,10 +6558,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<ListOperationsResponse> listOperations(
-    ListOperationsRequest request,
-  ) async {
+    ListOperationsRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_listOperations case final listOperations?) {
@@ -5266,11 +6579,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
   Future<Operation<T, S>> getOperation<
     T extends ProtoMessage,
     S extends ProtoMessage
-  >(Operation<T, S> request) async {
+  >(Operation<T, S> request, {RetryRunner? retry}) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_getOperation case final getOperation?) {
@@ -5284,8 +6600,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> deleteOperation(DeleteOperationRequest request) async {
+  Future<void> deleteOperation(
+    DeleteOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_deleteOperation case final deleteOperation?) {
@@ -5299,8 +6621,14 @@ base class FakeTesting implements Testing {
   /// Throws a [http.ClientException] if there were problems communicating with
   /// the API service. Throws a [ServiceException] if the API method failed for
   /// any reason.
+  ///
+  /// Failed requests are retried using [retry] if provided, or the default retry
+  /// policy for this method otherwise.
   @override
-  Future<void> cancelOperation(CancelOperationRequest request) async {
+  Future<void> cancelOperation(
+    CancelOperationRequest request, {
+    RetryRunner? retry,
+  }) async {
     if (isClosed) throw StateError('Service is closed');
 
     if (_cancelOperation case final cancelOperation?) {

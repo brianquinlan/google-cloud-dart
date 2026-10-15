@@ -61,8 +61,9 @@ import 'package:google_cloud_showcase_v1beta1/testing.dart';
 final class MyFakeSequenceService extends FakeSequenceService {
   @override
   Future<Sequence> createSequence(
-    CreateSequenceRequest request,
-  ) async {
+    CreateSequenceRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return Sequence();
   }

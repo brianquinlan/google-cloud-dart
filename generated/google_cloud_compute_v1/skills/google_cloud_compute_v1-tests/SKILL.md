@@ -299,8 +299,9 @@ import 'package:google_cloud_compute_v1/testing.dart';
 final class MyFakeFirewallPolicies extends FakeFirewallPolicies {
   @override
   Future<FirewallPoliciesListAssociationsResponse> listAssociations(
-    ListAssociationsFirewallPolicyRequest request,
-  ) async {
+    ListAssociationsFirewallPolicyRequest request, {
+    RetryRunner? retry,
+  }) async {
     // Assert request contents here if needed.
     return FirewallPoliciesListAssociationsResponse();
   }
