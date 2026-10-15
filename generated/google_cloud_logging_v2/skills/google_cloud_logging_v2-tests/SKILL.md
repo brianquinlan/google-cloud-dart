@@ -47,6 +47,7 @@ override its methods. Methods that are not overridden will throw an
 `UnsupportedError`.
 
 ```dart
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_logging_v2/logging.dart';
 import 'package:google_cloud_logging_v2/testing.dart';
 

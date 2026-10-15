@@ -121,6 +121,7 @@ override its methods. Methods that are not overridden will throw an
 `UnsupportedError`.
 
 ```dart
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_aiplatform_v1beta1/aiplatform.dart';
 import 'package:google_cloud_aiplatform_v1beta1/testing.dart';
 

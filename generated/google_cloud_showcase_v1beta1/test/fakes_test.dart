@@ -18,6 +18,7 @@ library;
 
 import 'package:google_cloud_longrunning/longrunning.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_showcase_v1beta1/showcase.dart';
 import 'package:google_cloud_showcase_v1beta1/testing.dart';
 import 'package:test/test.dart';

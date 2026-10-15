@@ -19,6 +19,7 @@
 @Timeout(Duration(minutes: 5))
 library;
 
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/rpc.dart';
 import 'package:google_cloud_showcase_v1beta1/showcase.dart';
 import 'package:http/http.dart' as http;
@@ -89,10 +90,10 @@ void main() async {
 
       await sequenceService.attemptSequence(
         AttemptSequenceRequest(name: sequence.name),
-        retry: const ExponentialRetry.onCodes(
-          [Code.unavailable, Code.resourceExhausted],
-          initialDelay: Duration(milliseconds: 10),
-        ),
+        retry: const ExponentialRetry.onCodes([
+          Code.unavailable,
+          Code.resourceExhausted,
+        ], initialDelay: Duration(milliseconds: 10)),
       );
 
       final report = await sequenceService.getSequenceReport(
@@ -121,10 +122,9 @@ void main() async {
       await expectLater(
         () => sequenceService.attemptSequence(
           AttemptSequenceRequest(name: sequence.name),
-          retry: const ExponentialRetry.onCodes(
-            [Code.unavailable],
-            initialDelay: Duration(milliseconds: 10),
-          ),
+          retry: const ExponentialRetry.onCodes([
+            Code.unavailable,
+          ], initialDelay: Duration(milliseconds: 10)),
         ),
         throwsA(isA<BadRequestException>()),
       );

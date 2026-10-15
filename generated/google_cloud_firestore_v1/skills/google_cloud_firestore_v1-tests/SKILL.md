@@ -43,6 +43,7 @@ override its methods. Methods that are not overridden will throw an
 `UnsupportedError`.
 
 ```dart
+import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_firestore_v1/firestore.dart';
 import 'package:google_cloud_firestore_v1/testing.dart';
 

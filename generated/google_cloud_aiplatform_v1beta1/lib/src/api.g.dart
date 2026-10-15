@@ -35018,7 +35018,7 @@ final class PredictionService {
     );
     final response = await _client.post(
       url,
-      body: request,
+      body: request.httpBody,
       retry: retry ?? noRetry,
     );
     return HttpBody.fromJson(response);
@@ -35042,7 +35042,7 @@ final class PredictionService {
     return _client
         .postStreaming(
           url,
-          body: request,
+          body: request.httpBody,
           enableSse: true,
           retry: retry ?? noRetry,
         )

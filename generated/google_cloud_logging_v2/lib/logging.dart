@@ -24,7 +24,6 @@ library;
 // ignore_for_file: unintended_html_in_doc_comment
 
 export 'package:google_cloud_rpc/exceptions.dart';
-export 'package:google_cloud_rpc/retry.dart';
 
 export 'src/api.g.dart'
     hide FakeConfigServiceV2, FakeLoggingServiceV2, FakeMetricsServiceV2;
