@@ -307,18 +307,35 @@ class ServiceClient {
   }) async* {
     _checkTimeout(timeout, 'timeout');
     _checkTimeout(streamWaitTimeout, 'streamWaitTimeout');
+    // Before the response starts, `timeout` and `streamWaitTimeout` limit the
+    // same wait, so only the shorter one matters.
+    final startTimeout = switch ((timeout, streamWaitTimeout)) {
+      (null, null) => null,
+      (Duration t, null) => t,
+      (null, Duration t) => t,
+      (Duration t1, Duration t2) => t1 < t2 ? t1 : t2,
+    };
     final requestUrl = enableSse ? _makeUrlStreaming(url) : url;
     final encodedBody = body?._asEncodedJson;
     final messages = await retry.run(() async {
       // `timeout` limits the whole attempt, including any part of an event
       // stream that is read after the attempt completes.
       final stopwatch = Stopwatch()..start();
-      final response = await _withStartTimeout(
-        _send(requestUrl, method, encodedBody),
-        requestUrl,
-        timeout: timeout,
-        streamWaitTimeout: streamWaitTimeout,
-      );
+      final pendingResponse = _send(requestUrl, method, encodedBody);
+      final response = startTimeout == null
+          ? await pendingResponse
+          : await pendingResponse.timeout(
+              startTimeout,
+              onTimeout: () {
+                // The request keeps running in the background. If its response
+                // starts anyway, cancel it, because nothing will read it.
+                pendingResponse.then(_cancel).ignore();
+                throw TimeoutException(
+                  'Request to $requestUrl did not return any data',
+                  startTimeout,
+                );
+              },
+            );
       final bytes = _withRemainingTimeout(
         _withStallTimeout(response.stream, requestUrl, streamWaitTimeout),
         requestUrl,
@@ -389,38 +406,6 @@ class ServiceClient {
   // This client follows Java, except that `streamWaitTimeout` limits the gap
   // between chunks of data rather than between messages, and there is no
   // equivalent of `streamIdleTimeout`.
-
-  /// Waits for [response] to start, failing with a [TimeoutException] if it
-  /// doesn't start within [timeout] or [streamWaitTimeout], whichever is
-  /// shorter.
-  ///
-  /// The request keeps running in the background after a timeout. If its
-  /// response starts anyway, the response is cancelled, because nothing will
-  /// read it.
-  static Future<http.StreamedResponse> _withStartTimeout(
-    Future<http.StreamedResponse> response,
-    Uri url, {
-    required Duration? timeout,
-    required Duration? streamWaitTimeout,
-  }) {
-    final limit = switch ((timeout, streamWaitTimeout)) {
-      (null, null) => null,
-      (Duration t, null) => t,
-      (null, Duration t) => t,
-      (Duration t1, Duration t2) => t1 < t2 ? t1 : t2,
-    };
-    if (limit == null) return response;
-    return response.timeout(
-      limit,
-      onTimeout: () {
-        response.then(_cancel).ignore();
-        throw TimeoutException(
-          'Request to $url did not return any data',
-          limit,
-        );
-      },
-    );
-  }
 
   /// Cancels [response], which releases its connection.
   static Future<void> _cancel(http.StreamedResponse response) =>
