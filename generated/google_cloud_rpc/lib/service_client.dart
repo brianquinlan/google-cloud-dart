@@ -444,6 +444,7 @@ class ServiceClient {
     Stopwatch stopwatch,
   ) {
     if (timeout == null) return stream;
+
     late final StreamSubscription<T> subscription;
     late final Timer timer;
     late final StreamController<T> controller;
