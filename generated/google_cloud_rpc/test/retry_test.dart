@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:clock/clock.dart';
@@ -227,6 +228,12 @@ void main() {
       expect(matchesStatusCode(error, const [Code.deadlineExceeded]), isFalse);
     });
 
+    test('treats a timeout as DEADLINE_EXCEEDED', () {
+      final error = TimeoutException('timed out', const Duration(seconds: 1));
+      expect(matchesStatusCode(error, const [Code.deadlineExceeded]), isTrue);
+      expect(matchesStatusCode(error, const [Code.unavailable]), isFalse);
+    });
+
     test('does not match other errors', () {
       expect(
         matchesStatusCode(const FormatException('bad json'), const [
@@ -365,6 +372,18 @@ void main() {
         throwsA(isA<InternalServerErrorException>()),
       );
       expect(count, 1);
+    });
+
+    test('onCodes retries a timeout as DEADLINE_EXCEEDED', () async {
+      var count = 0;
+      expect(
+        await const NoDelayRetry.onCodes([Code.deadlineExceeded]).run(() async {
+          if (++count == 1) throw TimeoutException('timed out');
+          return 5;
+        }),
+        5,
+      );
+      expect(count, 2);
     });
 
     test('retries the errors that retryIf accepts', () async {

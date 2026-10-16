@@ -47,6 +47,8 @@ final class StorageObject {
   ///
   /// {@macro storage_retry_sometimes_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
   /// If set, `generation` selects a specific revision of this object (as
@@ -68,6 +70,7 @@ final class StorageObject {
     BigInt? ifGenerationMatch,
     BigInt? ifMetagenerationMatch,
     RetryRunner? retry,
+    Duration? timeout,
   }) => storage.deleteObject(
     bucketName,
     name,
@@ -75,6 +78,7 @@ final class StorageObject {
     ifGenerationMatch: ifGenerationMatch,
     ifMetagenerationMatch: ifMetagenerationMatch,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Download the content of this [Google Cloud Storage object][] as bytes.
@@ -126,20 +130,24 @@ final class StorageObject {
   ///
   /// {@macro storage_retry_not_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
   /// [Google Cloud Storage object]: https://docs.cloud.google.com/storage/docs/objects
-  Future<void> makePublic({RetryRunner? retry}) =>
-      storage.makeObjectPublic(bucketName, name, retry: retry);
+  Future<void> makePublic({RetryRunner? retry, Duration? timeout}) => storage
+      .makeObjectPublic(bucketName, name, retry: retry, timeout: timeout);
 
   /// Updates the metadata associated with this [Google Cloud Storage object][].
   ///
   /// This operation is idempotent if [ifMetagenerationMatch] is set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If set, [generation] selects a specific revision of this object (as
   /// opposed to the latest version) to patch.
@@ -177,6 +185,7 @@ final class StorageObject {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) => storage.patchObject(
     bucketName,
     name,
@@ -188,6 +197,7 @@ final class StorageObject {
     projection: projection,
     userProject: userProject,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Information about this [Google Cloud Storage object][].
@@ -195,6 +205,8 @@ final class StorageObject {
   /// This operation is read-only and always idempotent.
   ///
   /// {@macro storage_retry_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
@@ -229,6 +241,7 @@ final class StorageObject {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) => storage.objectMetadata(
     bucketName,
     name,
@@ -238,6 +251,7 @@ final class StorageObject {
     projection: projection,
     userProject: userProject,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Moves this [Google Cloud Storage object][] to a new [newName].
@@ -247,6 +261,8 @@ final class StorageObject {
   /// https://docs.cloud.google.com/storage/docs/retry-strategy#idempotency-operations
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
@@ -276,6 +292,7 @@ final class StorageObject {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) => storage.moveObject(
     bucketName,
     name,
@@ -285,6 +302,7 @@ final class StorageObject {
     projection: projection,
     userProject: userProject,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Rewrites this [Google Cloud Storage object][] to a [destinationObject] in
@@ -300,6 +318,8 @@ final class StorageObject {
   /// This operation is idempotent if [ifGenerationMatch] is set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the source object does not exist.
   ///
@@ -350,6 +370,7 @@ final class StorageObject {
     String? userProject,
     BigInt? maxBytesRewrittenPerCall,
     RetryRunner? retry,
+    Duration? timeout,
   }) => storage.rewriteObject(
     bucketName,
     name,
@@ -364,6 +385,7 @@ final class StorageObject {
     userProject: userProject,
     maxBytesRewrittenPerCall: maxBytesRewrittenPerCall,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Creates or updates the content of this [Google Cloud Storage object][].

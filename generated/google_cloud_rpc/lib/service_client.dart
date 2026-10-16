@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:google_cloud_protobuf/protobuf.dart';
+// `show` because protobuf's `Duration` would shadow `dart:core`'s.
+import 'package:google_cloud_protobuf/protobuf.dart' show JsonEncodable;
 import 'package:http/http.dart' as http;
 
 import 'exceptions.dart';
@@ -43,6 +45,20 @@ const String _typeJson = 'application/json';
 /// how, failed attempts are retried. It defaults to [noRetry]: a
 /// [ServiceClient] doesn't know whether an operation is safe to repeat, so the
 /// caller must decide.
+///
+/// Every request method also takes a `timeout` argument. If it is set, an
+/// attempt that doesn't complete within `timeout` fails with a
+/// [TimeoutException]. The timeout applies to each attempt separately, and
+/// `retry` decides whether an attempt that timed out is retried. For example,
+/// [ExponentialRetry.onCodes] treats a [TimeoutException] as
+/// [Code.deadlineExceeded].
+///
+/// If the server responds to a streaming request with server-sent events,
+/// `timeout` limits the wait for the response to start, and then each wait for
+/// more data. It never limits the length of the whole stream.
+///
+/// An attempt that times out isn't cancelled: the request continues in the
+/// background, and its result is ignored.
 class ServiceClient {
   final http.Client client;
 
@@ -99,80 +115,108 @@ class ServiceClient {
     return buffer.toString();
   }
 
-  Future<Map<String, dynamic>> get(Uri url, {RetryRunner retry = noRetry}) =>
-      _makeRequest(url, 'GET', retry: retry);
+  Future<Map<String, dynamic>> get(
+    Uri url, {
+    RetryRunner retry = noRetry,
+    Duration? timeout,
+  }) => _makeRequest(url, 'GET', retry: retry, timeout: timeout);
 
   Stream<Map<String, dynamic>> getStreaming(
     Uri url, {
     required bool enableSse,
     RetryRunner retry = noRetry,
-  }) => _makeStreamingRequest(url, 'GET', enableSse: enableSse, retry: retry);
+    Duration? timeout,
+  }) => _makeStreamingRequest(
+    url,
+    'GET',
+    enableSse: enableSse,
+    retry: retry,
+    timeout: timeout,
+  );
 
-  Future<Map<String, dynamic>> delete(Uri url, {RetryRunner retry = noRetry}) =>
-      _makeRequest(url, 'DELETE', retry: retry);
+  Future<Map<String, dynamic>> delete(
+    Uri url, {
+    RetryRunner retry = noRetry,
+    Duration? timeout,
+  }) => _makeRequest(url, 'DELETE', retry: retry, timeout: timeout);
 
   Stream<Map<String, dynamic>> deleteStreaming(
     Uri url, {
     required bool enableSse,
     RetryRunner retry = noRetry,
-  }) =>
-      _makeStreamingRequest(url, 'DELETE', enableSse: enableSse, retry: retry);
+    Duration? timeout,
+  }) => _makeStreamingRequest(
+    url,
+    'DELETE',
+    enableSse: enableSse,
+    retry: retry,
+    timeout: timeout,
+  );
 
   Future<Map<String, dynamic>> patch(
     Uri url, {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
-  }) => _makeRequest(url, 'PATCH', body: body, retry: retry);
+    Duration? timeout,
+  }) => _makeRequest(url, 'PATCH', body: body, retry: retry, timeout: timeout);
 
   Stream<Map<String, dynamic>> patchStreaming(
     Uri url, {
     required bool enableSse,
     JsonEncodable? body,
     RetryRunner retry = noRetry,
+    Duration? timeout,
   }) => _makeStreamingRequest(
     url,
     'PATCH',
     body: body,
     enableSse: enableSse,
     retry: retry,
+    timeout: timeout,
   );
 
   Future<Map<String, dynamic>> post(
     Uri url, {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
-  }) => _makeRequest(url, 'POST', body: body, retry: retry);
+    Duration? timeout,
+  }) => _makeRequest(url, 'POST', body: body, retry: retry, timeout: timeout);
 
   Stream<Map<String, dynamic>> postStreaming(
     Uri url, {
     required bool enableSse,
     JsonEncodable? body,
     RetryRunner retry = noRetry,
+    Duration? timeout,
   }) => _makeStreamingRequest(
     url,
     'POST',
     body: body,
     enableSse: enableSse,
     retry: retry,
+    timeout: timeout,
   );
 
   Future<Map<String, dynamic>> put(
     Uri url, {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
-  }) => _makeRequest(url, 'PUT', body: body, retry: retry);
+    Duration? timeout,
+  }) => _makeRequest(url, 'PUT', body: body, retry: retry, timeout: timeout);
 
   Stream<Map<String, dynamic>> putStreaming(
     Uri url, {
     required bool enableSse,
     JsonEncodable? body,
     RetryRunner retry = noRetry,
+    Duration? timeout,
   }) => _makeStreamingRequest(
     url,
     'PUT',
     body: body,
     enableSse: enableSse,
     retry: retry,
+    timeout: timeout,
   );
 
   /// Closes the client and cleans up any resources associated with it.
@@ -216,15 +260,19 @@ class ServiceClient {
     String method, {
     JsonEncodable? body,
     required RetryRunner retry,
+    required Duration? timeout,
   }) {
+    _checkTimeout(timeout);
     final encodedBody = body?._asEncodedJson;
-    return retry.run(() async {
-      final response = await _send(url, method, encodedBody);
-      final responseBody = await response.stream.bytesToString();
-      return responseBody.isEmpty
-          ? {}
-          : jsonDecode(responseBody) as Map<String, dynamic>;
-    });
+    return retry.run(
+      () => _withTimeout(url, timeout, () async {
+        final response = await _send(url, method, encodedBody);
+        final responseBody = await response.stream.bytesToString();
+        return responseBody.isEmpty
+            ? {}
+            : jsonDecode(responseBody) as Map<String, dynamic>;
+      }),
+    );
   }
 
   /// Make a request that streams its results using
@@ -237,43 +285,108 @@ class ServiceClient {
     JsonEncodable? body,
     required bool enableSse,
     required RetryRunner retry,
+    required Duration? timeout,
   }) async* {
+    _checkTimeout(timeout);
     final requestUrl = enableSse ? _makeUrlStreaming(url) : url;
     final encodedBody = body?._asEncodedJson;
-    final messages = await retry.run(() async {
-      final response = await _send(requestUrl, method, encodedBody);
-      switch (http.MediaType.parse(
-        response.headers['content-type'] ?? '',
-      ).mimeType) {
-        case 'application/json':
-          // The server responded with a non-streaming response, which should
-          // be a list of JSON objects. The whole body is read as part of the
-          // attempt, so a failure while reading it can be retried.
-          final responseBody = await response.stream.bytesToString();
-          final json = (jsonDecode(responseBody) as List)
-              .cast<Map<String, dynamic>>();
-          return Stream.fromIterable(json);
-        case 'text/event-stream':
-          // The server responded with an event stream, which is what we
-          // expect. Events reach the caller as they arrive, so failures after
-          // this point are not retried.
-          return _decodeEvents(response);
-        default:
-          throw ServiceException(
-            'Unsupported content type: ${response.headers['content-type']}',
-            statusCode: response.statusCode,
-          );
-      }
-    });
+    final messages = await retry.run(
+      () => _withTimeout(requestUrl, timeout, () async {
+        final response = await _send(requestUrl, method, encodedBody);
+        switch (http.MediaType.parse(
+          response.headers['content-type'] ?? '',
+        ).mimeType) {
+          case 'application/json':
+            // The server responded with a non-streaming response, which should
+            // be a list of JSON objects. The whole body is read as part of the
+            // attempt, so a failure while reading it can be retried.
+            final responseBody = await response.stream.bytesToString();
+            final json = (jsonDecode(responseBody) as List)
+                .cast<Map<String, dynamic>>();
+            return Stream.fromIterable(json);
+          case 'text/event-stream':
+            // The server responded with an event stream, which is what we
+            // expect. Events reach the caller as they arrive, so failures after
+            // this point are not retried, and `timeout` limits each wait for
+            // more data rather than the whole response.
+            return _decodeEvents(
+              _withStallTimeout(response.stream, requestUrl, timeout),
+            );
+          default:
+            throw ServiceException(
+              'Unsupported content type: ${response.headers['content-type']}',
+              statusCode: response.statusCode,
+            );
+        }
+      }),
+    );
     yield* messages;
   }
 
-  static Stream<Map<String, dynamic>> _decodeEvents(
-    http.StreamedResponse response,
-  ) async* {
-    final lines = response.stream.toStringStream().transform(
-      const LineSplitter(),
+  /// Runs [attempt], failing with a [TimeoutException] if it doesn't complete
+  /// within [timeout].
+  ///
+  /// An attempt that times out keeps running in the background, and its
+  /// result is ignored.
+  static Future<T> _withTimeout<T>(
+    Uri url,
+    Duration? timeout,
+    Future<T> Function() attempt,
+  ) {
+    if (timeout == null) return attempt();
+    // TODO: Use `http.Abortable` when it is widely available. In practice,
+    // `client` will almost always be a `package:googleapis_auth` wrapper, which
+    // does not forward `Abortable.abortTrigger` to the underlying client.
+    return attempt().timeout(
+      timeout,
+      onTimeout: () =>
+          throw TimeoutException('Request to $url did not complete', timeout),
     );
+  }
+
+  // As of 2026-10-16 there is no consistent timeout behavior for streaming RPCs
+  // across implementations:
+  // - Go has a deadline for the entire stream but with no default timeout
+  //   because of a concern for long-lived streams
+  //   (see https://github.com/googleapis/gapic-generator-go/issues/411).
+  // - Java has a two timeout options for streams: a deadline for the entire
+  //   stream and a deadline for the gap between messages.
+  // - Python (gRPC) has a deadline for the whole stream.
+  // - Python (REST) has a deadline for the gap between messages.
+  // - Node.js and Rust have deadlines for the whole stream.
+
+  /// [bytes], failing with a [TimeoutException] if no data arrives for
+  /// [timeout].
+  ///
+  /// Time spent with the subscription paused doesn't count. After a timeout,
+  /// the subscription to [bytes] is cancelled.
+  static Stream<List<int>> _withStallTimeout(
+    Stream<List<int>> bytes,
+    Uri url,
+    Duration? timeout,
+  ) {
+    // The other
+    if (timeout == null) return bytes;
+    return bytes.timeout(
+      timeout,
+      onTimeout: (sink) {
+        sink
+          ..addError(TimeoutException('No data received from $url', timeout))
+          ..close();
+      },
+    );
+  }
+
+  static void _checkTimeout(Duration? timeout) {
+    if (timeout != null && timeout <= Duration.zero) {
+      throw ArgumentError.value(timeout, 'timeout', 'must be positive');
+    }
+  }
+
+  static Stream<Map<String, dynamic>> _decodeEvents(
+    Stream<List<int>> bytes,
+  ) async* {
+    final lines = utf8.decoder.bind(bytes).transform(const LineSplitter());
     await for (final line in lines) {
       // Google APIs only generate "data" events.
       // The SSE specification does not require a space after the colon but

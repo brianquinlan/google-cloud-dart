@@ -6,6 +6,9 @@
 - Update the package's `CHANGELOG.md` with any new features, public API
   changes, or bug fixes before declaring yourself done.
 - Wrap Markdown (`*.md`) files at 80 columns.
+- After changing a file under `pkgs/*/example/`, run
+  `dart run tool/update_excerpts.dart` to update the `README.md` code excerpts
+  (CI fails if they are out of date).
 - Update this file if you discover something useful about developing in this
   repository.
 
@@ -18,6 +21,9 @@
       followed by a noun or gerund phrase
 - Prefer the use of `Uri.https(...)` over `Uri.parse(...)` when the scheme is
   known to be https.
+- `package:google_cloud_protobuf/protobuf.dart` exports a protobuf `Duration`
+  that silently shadows `dart:core`'s `Duration`. Import it with `show` (or
+  `hide Duration`) in libraries that use `dart:core`'s `Duration`.
 
 ## Generated code
 

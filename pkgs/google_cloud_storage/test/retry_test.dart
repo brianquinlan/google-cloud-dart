@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
+
 import 'package:google_cloud_storage/google_cloud_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
@@ -31,6 +33,7 @@ void main() {
       );
       expect(isTransientError(RequestTimeoutException('408')), isTrue);
       expect(isTransientError(http.ClientException('network')), isTrue);
+      expect(isTransientError(TimeoutException('timed out')), isTrue);
       expect(
         isTransientError(ChecksumValidationException('bad checksum')),
         isTrue,

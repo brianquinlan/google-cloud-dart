@@ -15,7 +15,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:google_cloud_protobuf/protobuf.dart';
+// `show` because protobuf's `Duration` would shadow `dart:core`'s.
+import 'package:google_cloud_protobuf/protobuf.dart' show JsonEncodable;
 import 'package:google_cloud_rpc/retry.dart';
 import 'package:google_cloud_rpc/service_client.dart';
 import 'package:http/http.dart' as http;
@@ -161,6 +162,9 @@ final class Storage {
   /// to a method to change how that call is retried. The documentation for
   /// each method says when the operation is idempotent.
   ///
+  /// Requests have no time limit by default. Most methods take a `timeout`
+  /// argument that limits how long each request can take.
+  ///
   /// [Google Cloud Storage]: https://cloud.google.com/storage
   /// [Cloud Storage for Firebase Emulator]: https://firebase.google.com/docs/emulator-suite/connect_storage
   /// [default application credentials]: https://docs.cloud.google.com/docs/authentication/application-default-credentials
@@ -233,6 +237,12 @@ final class Storage {
   /// not set.
   /// {@endtemplate}
   ///
+  /// {@template storage_timeout}
+  /// If set, [timeout] limits how long each request can take. A request that
+  /// takes longer fails with a [TimeoutException], which [isTransientError]
+  /// considers transient.
+  /// {@endtemplate}
+  ///
   /// Throws [NotFoundException] if the bucket does not exist.
   ///
   /// If non-null, [ifMetagenerationMatch] makes retrieving the bucket metadata
@@ -258,6 +268,7 @@ final class Storage {
     String? userProject,
     String? projection,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -268,7 +279,7 @@ final class Storage {
         'userProject': ?userProject,
       },
     );
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     return bucketMetadataFromJson(j as Map<String, Object?>);
   });
 
@@ -279,6 +290,8 @@ final class Storage {
   ///
   /// {@macro storage_retry_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// See [API reference docs](https://cloud.google.com/storage/docs/json_api/v1/buckets/insert).
   ///
   /// [Google Cloud Storage bucket]: https://docs.cloud.google.com/storage/docs/buckets
@@ -286,6 +299,7 @@ final class Storage {
     BucketMetadata metadata, {
     bool enableObjectRetention = false,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -298,6 +312,7 @@ final class Storage {
     final j = await serviceClient.post(
       url,
       body: _JsonEncodableWrapper(bucketMetadataToJson(metadata)),
+      timeout: timeout,
     );
     return bucketMetadataFromJson(j as Map<String, Object?>);
   });
@@ -307,6 +322,8 @@ final class Storage {
   /// This operation is always idempotent.
   ///
   /// {@macro storage_retry_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the bucket does not exist. Throws
   /// [ConflictException] if the bucket is not empty.
@@ -327,6 +344,7 @@ final class Storage {
     BigInt? ifMetagenerationMatch,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -336,7 +354,7 @@ final class Storage {
         'userProject': ?userProject,
       },
     );
-    await serviceClient.delete(url);
+    await serviceClient.delete(url, timeout: timeout);
   });
 
   /// Deletes an ACL entry on the specified [Google Cloud Storage bucket].
@@ -346,6 +364,8 @@ final class Storage {
   /// {@template storage_retry_not_idempotent}
   /// Failed requests are only retried if [retry] is set.
   /// {@endtemplate}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -361,10 +381,11 @@ final class Storage {
     String bucket,
     String entity, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl', entity], {});
-    await serviceClient.delete(url);
+    await serviceClient.delete(url, timeout: timeout);
   });
 
   /// Returns the ACL entry for the specified entity on the specified
@@ -373,6 +394,8 @@ final class Storage {
   /// This operation is read-only and always idempotent.
   ///
   /// {@macro storage_retry_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// {@macro acl_entity_docs}
   ///
@@ -385,10 +408,11 @@ final class Storage {
     String bucket,
     String entity, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl', entity], {});
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     return bucketAccessControlFromJson(j as Map<String, Object?>)!;
   });
 
@@ -397,6 +421,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -425,12 +451,14 @@ final class Storage {
     String entity,
     String role, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl'], {});
     final j = await serviceClient.post(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return bucketAccessControlFromJson(j as Map<String, Object?>)!;
   });
@@ -442,6 +470,8 @@ final class Storage {
   ///
   /// {@macro storage_retry_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// Throws [NotFoundException] if the bucket does not exist.
   ///
   /// See [API reference docs](https://cloud.google.com/storage/docs/json_api/v1/bucketAccessControls/list).
@@ -450,10 +480,11 @@ final class Storage {
   Future<List<BucketAccessControl>> listBucketAcl(
     String bucket, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl'], {});
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     final items = j['items'] as List<Object?>? ?? const [];
     return [
       for (final item in items)
@@ -471,6 +502,8 @@ final class Storage {
   /// Each page of results is requested, and retried, separately. So a failed
   /// request doesn't repeat the pages that have already been received.
   /// {@endtemplate}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// [prefix] filters the returned buckets to those whose names begin with the
   /// specified prefix.
@@ -498,6 +531,7 @@ final class Storage {
     bool? softDeleted,
     int? maxResults,
     RetryRunner? retry,
+    Duration? timeout,
   }) async* {
     final pageRetry = _retryFor(retry, idempotent: true);
     String? nextPageToken;
@@ -515,7 +549,11 @@ final class Storage {
           'softDeleted': ?softDeleted?.toString(),
         },
       );
-      final json = await serviceClient.get(url, retry: pageRetry);
+      final json = await serviceClient.get(
+        url,
+        retry: pageRetry,
+        timeout: timeout,
+      );
       nextPageToken = json['nextPageToken'] as String?;
 
       for (final bucket in json['items'] as List<Object?>? ?? const []) {
@@ -533,6 +571,8 @@ final class Storage {
   /// operation is not idempotent. Otherwise, failed requests are retried using
   /// [defaultRetry], but only if the operation is idempotent.
   /// {@endtemplate}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If set, [ifMetagenerationMatch] makes updating the bucket metadata
   /// conditional on whether the bucket's metageneration matches the provided
@@ -582,6 +622,7 @@ final class Storage {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) =>
       _retryFor(retry, idempotent: ifMetagenerationMatch != null).run(() async {
         final serviceClient = await _serviceClient;
@@ -599,6 +640,7 @@ final class Storage {
         final j = await serviceClient.patch(
           url,
           body: BucketMetadataPatchBuilderJsonEncodable(metadata),
+          timeout: timeout,
         );
         return bucketMetadataFromJson(j as Map<String, Object?>);
       });
@@ -609,6 +651,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -627,12 +671,14 @@ final class Storage {
     String entity,
     String role, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl', entity], {});
     final j = await serviceClient.patch(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return bucketAccessControlFromJson(j as Map<String, Object?>)!;
   });
@@ -643,6 +689,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -661,12 +709,14 @@ final class Storage {
     String entity,
     String role, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(['storage', 'v1', 'b', bucket, 'acl', entity], {});
     final j = await serviceClient.put(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return bucketAccessControlFromJson(j as Map<String, Object?>)!;
   });
@@ -679,6 +729,8 @@ final class Storage {
   /// set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
@@ -703,6 +755,7 @@ final class Storage {
     BigInt? ifGenerationMatch,
     BigInt? ifMetagenerationMatch,
     RetryRunner? retry,
+    Duration? timeout,
   }) =>
       _retryFor(
         retry,
@@ -717,7 +770,7 @@ final class Storage {
             'ifMetagenerationMatch': ?ifMetagenerationMatch?.toString(),
           },
         );
-        await serviceClient.delete(url);
+        await serviceClient.delete(url, timeout: timeout);
       });
 
   /// Deletes an ACL entry on the specified [Google Cloud Storage object].
@@ -725,6 +778,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object or ACL does not exist.
   ///
@@ -757,13 +812,14 @@ final class Storage {
     String entity, {
     BigInt? generation,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
       ['storage', 'v1', 'b', bucket, 'o', object, 'acl', entity],
       {'generation': ?generation?.toString()},
     );
-    await serviceClient.delete(url);
+    await serviceClient.delete(url, timeout: timeout);
   });
 
   /// Download the content of a [Google Cloud Storage object][] as bytes.
@@ -825,6 +881,8 @@ final class Storage {
   ///
   /// {@macro storage_retry_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// {@macro acl_entity_docs}
   ///
   /// Throws [NotFoundException] if the object or ACL entry does not exist.
@@ -842,13 +900,14 @@ final class Storage {
     String entity, {
     BigInt? generation,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
       ['storage', 'v1', 'b', bucket, 'o', object, 'acl', entity],
       {'generation': ?generation?.toString()},
     );
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     return objectAccessControlFromJson(j as Map<String, Object?>)!;
   });
 
@@ -857,6 +916,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -882,6 +943,7 @@ final class Storage {
     String entity,
     String role, {
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl([
@@ -896,6 +958,7 @@ final class Storage {
     final j = await serviceClient.post(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return objectAccessControlFromJson(j as Map<String, Object?>)!;
   });
@@ -906,6 +969,8 @@ final class Storage {
   /// This operation is read-only and always idempotent.
   ///
   /// {@macro storage_retry_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
@@ -921,13 +986,14 @@ final class Storage {
     String object, {
     BigInt? generation,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
       ['storage', 'v1', 'b', bucket, 'o', object, 'acl'],
       {'generation': ?generation?.toString()},
     );
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     final items = j['items'] as List<Object?>? ?? const [];
     return [
       for (final item in items)
@@ -943,6 +1009,8 @@ final class Storage {
   /// {@macro storage_retry_idempotent}
   ///
   /// {@macro storage_list_retry}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If [delimiter] is set, returns results in a directory-like mode, with
   /// `'/'` being a common value for the delimiter. The result will only
@@ -1004,6 +1072,7 @@ final class Storage {
     String? userProject,
     bool? versions,
     RetryRunner? retry,
+    Duration? timeout,
   }) async* {
     final pageRetry = _retryFor(retry, idempotent: true);
     String? nextPageToken;
@@ -1024,7 +1093,11 @@ final class Storage {
           'versions': ?versions?.toString(),
         },
       );
-      final json = await serviceClient.get(url, retry: pageRetry);
+      final json = await serviceClient.get(
+        url,
+        retry: pageRetry,
+        timeout: timeout,
+      );
       nextPageToken = json['nextPageToken'] as String?;
 
       for (final object in json['items'] as List<Object?>? ?? const []) {
@@ -1039,6 +1112,8 @@ final class Storage {
   ///
   /// {@macro storage_retry_not_idempotent}
   ///
+  /// {@macro storage_timeout}
+  ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
   ///
@@ -1049,13 +1124,23 @@ final class Storage {
     String bucket,
     String object, {
     RetryRunner? retry,
-  }) => insertObjectAcl(bucket, object, 'allUsers', 'READER', retry: retry);
+    Duration? timeout,
+  }) => insertObjectAcl(
+    bucket,
+    object,
+    'allUsers',
+    'READER',
+    retry: retry,
+    timeout: timeout,
+  );
 
   /// Information about a [Google Cloud Storage object].
   ///
   /// This operation is read-only and always idempotent.
   ///
   /// {@macro storage_retry_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the object does not exist.
   ///
@@ -1092,6 +1177,7 @@ final class Storage {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: true).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -1104,7 +1190,7 @@ final class Storage {
         'userProject': ?userProject,
       },
     );
-    final j = await serviceClient.get(url);
+    final j = await serviceClient.get(url, timeout: timeout);
     return objectMetadataFromJson(j as Map<String, Object?>);
   });
 
@@ -1114,6 +1200,8 @@ final class Storage {
   /// [ifGenerationMatch] is set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the source object does not exist.
   ///
@@ -1144,6 +1232,7 @@ final class Storage {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) =>
       _retryFor(
         retry,
@@ -1170,7 +1259,7 @@ final class Storage {
             'userProject': ?userProject,
           },
         );
-        final j = await serviceClient.post(url);
+        final j = await serviceClient.post(url, timeout: timeout);
         return objectMetadataFromJson(j as Map<String, Object?>);
       });
 
@@ -1179,6 +1268,8 @@ final class Storage {
   /// This operation is idempotent if [ifMetagenerationMatch] is set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If set, [generation] selects a specific revision of this object (as
   /// opposed to the latest version) to patch.
@@ -1231,6 +1322,7 @@ final class Storage {
     String? projection,
     String? userProject,
     RetryRunner? retry,
+    Duration? timeout,
   }) =>
       _retryFor(retry, idempotent: ifMetagenerationMatch != null).run(() async {
         final serviceClient = await _serviceClient;
@@ -1248,6 +1340,7 @@ final class Storage {
         final j = await serviceClient.patch(
           url,
           body: ObjectMetadataPatchBuilderJsonEncodable(metadata),
+          timeout: timeout,
         );
         return objectMetadataFromJson(j as Map<String, Object?>);
       });
@@ -1258,6 +1351,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -1283,6 +1378,7 @@ final class Storage {
     String role, {
     BigInt? generation,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -1292,6 +1388,7 @@ final class Storage {
     final j = await serviceClient.patch(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return objectAccessControlFromJson(j as Map<String, Object?>)!;
   });
@@ -1305,6 +1402,8 @@ final class Storage {
   /// This operation is idempotent if [ifGenerationMatch] is set.
   ///
   /// {@macro storage_retry_sometimes_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// Throws [NotFoundException] if the source object does not exist.
   ///
@@ -1362,6 +1461,7 @@ final class Storage {
     String? userProject,
     BigInt? maxBytesRewrittenPerCall,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: ifGenerationMatch != null).run(() async {
     final serviceClient = await _serviceClient;
     String? rewriteToken;
@@ -1397,7 +1497,8 @@ final class Storage {
         },
       );
       final j =
-          await serviceClient.post(url, body: body) as Map<String, Object?>;
+          await serviceClient.post(url, body: body, timeout: timeout)
+              as Map<String, Object?>;
       final done = j['done'] as bool;
       rewriteToken = j['rewriteToken'] as String?;
       if (done) {
@@ -1415,6 +1516,8 @@ final class Storage {
   /// This operation is not idempotent.
   ///
   /// {@macro storage_retry_not_idempotent}
+  ///
+  /// {@macro storage_timeout}
   ///
   /// If the bucket has uniform bucket-level access enabled, this operation
   /// will fail with [BadRequestException].
@@ -1440,6 +1543,7 @@ final class Storage {
     String role, {
     BigInt? generation,
     RetryRunner? retry,
+    Duration? timeout,
   }) => _retryFor(retry, idempotent: false).run(() async {
     final serviceClient = await _serviceClient;
     final url = _requestUrl(
@@ -1449,6 +1553,7 @@ final class Storage {
     final j = await serviceClient.put(
       url,
       body: _JsonEncodableWrapper({'entity': entity, 'role': role}),
+      timeout: timeout,
     );
     return objectAccessControlFromJson(j as Map<String, Object?>)!;
   });
