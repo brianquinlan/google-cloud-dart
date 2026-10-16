@@ -53,12 +53,19 @@ const String _typeJson = 'application/json';
 /// [ExponentialRetry.onCodes] treats a [TimeoutException] as
 /// [Code.deadlineExceeded].
 ///
-/// If the server responds to a streaming request with server-sent events,
-/// `timeout` limits the wait for the response to start, and then each wait for
-/// more data. It never limits the length of the whole stream.
+/// For a streaming request, `timeout` limits the whole stream, including time
+/// that the caller spends with its subscription paused. Streaming request
+/// methods also take a `streamWaitTimeout` argument, which limits the wait for
+/// the response to start, and then each wait for more data. Time that the
+/// caller spends with its subscription paused doesn't count towards
+/// `streamWaitTimeout`.
 ///
-/// An attempt that times out isn't cancelled: the request continues in the
-/// background, and its result is ignored.
+/// If the server responds to a streaming request with server-sent events,
+/// events reach the caller as they arrive, so a timeout after the response
+/// starts ends the stream with a [TimeoutException], and isn't retried.
+///
+/// An attempt that times out may continue in the background, and its result
+/// is ignored.
 class ServiceClient {
   final http.Client client;
 
@@ -126,12 +133,14 @@ class ServiceClient {
     required bool enableSse,
     RetryRunner retry = noRetry,
     Duration? timeout,
+    Duration? streamWaitTimeout,
   }) => _makeStreamingRequest(
     url,
     'GET',
     enableSse: enableSse,
     retry: retry,
     timeout: timeout,
+    streamWaitTimeout: streamWaitTimeout,
   );
 
   Future<Map<String, dynamic>> delete(
@@ -145,12 +154,14 @@ class ServiceClient {
     required bool enableSse,
     RetryRunner retry = noRetry,
     Duration? timeout,
+    Duration? streamWaitTimeout,
   }) => _makeStreamingRequest(
     url,
     'DELETE',
     enableSse: enableSse,
     retry: retry,
     timeout: timeout,
+    streamWaitTimeout: streamWaitTimeout,
   );
 
   Future<Map<String, dynamic>> patch(
@@ -166,6 +177,7 @@ class ServiceClient {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
     Duration? timeout,
+    Duration? streamWaitTimeout,
   }) => _makeStreamingRequest(
     url,
     'PATCH',
@@ -173,6 +185,7 @@ class ServiceClient {
     enableSse: enableSse,
     retry: retry,
     timeout: timeout,
+    streamWaitTimeout: streamWaitTimeout,
   );
 
   Future<Map<String, dynamic>> post(
@@ -188,6 +201,7 @@ class ServiceClient {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
     Duration? timeout,
+    Duration? streamWaitTimeout,
   }) => _makeStreamingRequest(
     url,
     'POST',
@@ -195,6 +209,7 @@ class ServiceClient {
     enableSse: enableSse,
     retry: retry,
     timeout: timeout,
+    streamWaitTimeout: streamWaitTimeout,
   );
 
   Future<Map<String, dynamic>> put(
@@ -210,6 +225,7 @@ class ServiceClient {
     JsonEncodable? body,
     RetryRunner retry = noRetry,
     Duration? timeout,
+    Duration? streamWaitTimeout,
   }) => _makeStreamingRequest(
     url,
     'PUT',
@@ -217,6 +233,7 @@ class ServiceClient {
     enableSse: enableSse,
     retry: retry,
     timeout: timeout,
+    streamWaitTimeout: streamWaitTimeout,
   );
 
   /// Closes the client and cleans up any resources associated with it.
@@ -262,7 +279,7 @@ class ServiceClient {
     required RetryRunner retry,
     required Duration? timeout,
   }) {
-    _checkTimeout(timeout);
+    _checkTimeout(timeout, 'timeout');
     final encodedBody = body?._asEncodedJson;
     return retry.run(
       () => _withTimeout(url, timeout, () async {
@@ -286,13 +303,27 @@ class ServiceClient {
     required bool enableSse,
     required RetryRunner retry,
     required Duration? timeout,
+    required Duration? streamWaitTimeout,
   }) async* {
-    _checkTimeout(timeout);
+    _checkTimeout(timeout, 'timeout');
+    _checkTimeout(streamWaitTimeout, 'streamWaitTimeout');
     final requestUrl = enableSse ? _makeUrlStreaming(url) : url;
     final encodedBody = body?._asEncodedJson;
     final messages = await retry.run(
       () => _withTimeout(requestUrl, timeout, () async {
-        final response = await _send(requestUrl, method, encodedBody);
+        // Lets `timeout` also limit the part of an event stream that is read
+        // after the attempt completes.
+        final stopwatch = Stopwatch()..start();
+        final response = await _withStartTimeout(
+          _send(requestUrl, method, encodedBody),
+          requestUrl,
+          streamWaitTimeout,
+        );
+        final bytes = _withStallTimeout(
+          response.stream,
+          requestUrl,
+          streamWaitTimeout,
+        );
         switch (http.MediaType.parse(
           response.headers['content-type'] ?? '',
         ).mimeType) {
@@ -300,17 +331,17 @@ class ServiceClient {
             // The server responded with a non-streaming response, which should
             // be a list of JSON objects. The whole body is read as part of the
             // attempt, so a failure while reading it can be retried.
-            final responseBody = await response.stream.bytesToString();
+            final responseBody = await utf8.decodeStream(bytes);
             final json = (jsonDecode(responseBody) as List)
                 .cast<Map<String, dynamic>>();
             return Stream.fromIterable(json);
           case 'text/event-stream':
             // The server responded with an event stream, which is what we
             // expect. Events reach the caller as they arrive, so failures after
-            // this point are not retried, and `timeout` limits each wait for
-            // more data rather than the whole response.
+            // this point are not retried, and whatever remains of `timeout`
+            // limits the rest of the stream.
             return _decodeEvents(
-              _withStallTimeout(response.stream, requestUrl, timeout),
+              _withRemainingTimeout(bytes, requestUrl, timeout, stopwatch),
             );
           default:
             throw ServiceException(
@@ -349,11 +380,35 @@ class ServiceClient {
   // - Go has a deadline for the entire stream but with no default timeout
   //   because of a concern for long-lived streams
   //   (see https://github.com/googleapis/gapic-generator-go/issues/411).
-  // - Java has a two timeout options for streams: a deadline for the entire
-  //   stream and a deadline for the gap between messages.
+  // - Java has a three timeout options for streams: a deadline for the entire
+  //   stream (`timeout`), a deadline for the gap between messages
+  //   (`streamWaitTimeout`), and a deadline for the caller asking for more
+  //   data (`streamIdleTimeout`).
   // - Python (gRPC) has a deadline for the whole stream.
   // - Python (REST) has a deadline for the gap between messages.
   // - Node.js and Rust have deadlines for the whole stream.
+  //
+  // This client follows Java, except that `streamWaitTimeout` limits the gap
+  // between chunks of data rather than between messages, and there is no
+  // equivalent of `streamIdleTimeout`.
+
+  /// Waits for [response] to start, failing with a [TimeoutException] if it
+  /// doesn't start within [timeout].
+  ///
+  /// A request that times out keeps running in the background, and its
+  /// response is ignored.
+  static Future<http.StreamedResponse> _withStartTimeout(
+    Future<http.StreamedResponse> response,
+    Uri url,
+    Duration? timeout,
+  ) {
+    if (timeout == null) return response;
+    return response.timeout(
+      timeout,
+      onTimeout: () =>
+          throw TimeoutException('No data received from $url', timeout),
+    );
+  }
 
   /// [bytes], failing with a [TimeoutException] if no data arrives for
   /// [timeout].
@@ -365,7 +420,6 @@ class ServiceClient {
     Uri url,
     Duration? timeout,
   ) {
-    // The other
     if (timeout == null) return bytes;
     return bytes.timeout(
       timeout,
@@ -377,9 +431,54 @@ class ServiceClient {
     );
   }
 
-  static void _checkTimeout(Duration? timeout) {
+  /// [stream], failing with a [TimeoutException] if it isn't done by the time
+  /// [stopwatch] reaches [timeout].
+  ///
+  /// Time spent with the subscription paused counts. After a timeout, the
+  /// subscription to [stream] is cancelled, even if it is paused.
+  static Stream<T> _withRemainingTimeout<T>(
+    Stream<T> stream,
+    Uri url,
+    Duration? timeout,
+    Stopwatch stopwatch,
+  ) {
+    if (timeout == null) return stream;
+    late final StreamSubscription<T> subscription;
+    late final Timer timer;
+    late final StreamController<T> controller;
+    controller = StreamController<T>(
+      onListen: () {
+        subscription = stream.listen(
+          controller.add,
+          onError: controller.addError,
+          onDone: () {
+            timer.cancel();
+            controller.close();
+          },
+        );
+        // `Timer` treats a negative duration as zero.
+        timer = Timer(timeout - stopwatch.elapsed, () {
+          unawaited(subscription.cancel());
+          controller
+            ..addError(
+              TimeoutException('Request to $url did not complete', timeout),
+            )
+            ..close();
+        });
+      },
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+      onCancel: () {
+        timer.cancel();
+        return subscription.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  static void _checkTimeout(Duration? timeout, String name) {
     if (timeout != null && timeout <= Duration.zero) {
-      throw ArgumentError.value(timeout, 'timeout', 'must be positive');
+      throw ArgumentError.value(timeout, name, 'must be positive');
     }
   }
 
