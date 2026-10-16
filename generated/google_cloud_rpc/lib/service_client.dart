@@ -391,7 +391,8 @@ class ServiceClient {
   // equivalent of `streamIdleTimeout`.
 
   /// Waits for [response] to start, failing with a [TimeoutException] if it
-  /// doesn't start within [timeout] or [streamWaitTimeout].
+  /// doesn't start within [timeout] or [streamWaitTimeout], whichever is
+  /// shorter.
   ///
   /// The request keeps running in the background after a timeout. If its
   /// response starts anyway, the response is cancelled, because nothing will
@@ -402,25 +403,19 @@ class ServiceClient {
     required Duration? timeout,
     required Duration? streamWaitTimeout,
   }) {
-    Future<http.StreamedResponse> withLimit(
-      Future<http.StreamedResponse> future,
-      Duration? limit,
-      String message,
-    ) {
-      if (limit == null) return future;
-      return future.timeout(
-        limit,
-        onTimeout: () {
-          future.then(_cancel).ignore();
-          throw TimeoutException(message, limit);
-        },
-      );
-    }
-
-    return withLimit(
-      withLimit(response, streamWaitTimeout, 'No data received from $url'),
-      timeout,
-      'Request to $url did not complete',
+    final limit = timeout != null && streamWaitTimeout != null
+        ? (timeout < streamWaitTimeout ? timeout : streamWaitTimeout)
+        : timeout ?? streamWaitTimeout;
+    if (limit == null) return response;
+    return response.timeout(
+      limit,
+      onTimeout: () {
+        response.then(_cancel).ignore();
+        throw TimeoutException(
+          'Request to $url did not return any data',
+          limit,
+        );
+      },
     );
   }
 

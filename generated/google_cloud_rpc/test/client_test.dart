@@ -1316,6 +1316,34 @@ void main() {
         });
       }
 
+      test('the shorter of timeout and streamWaitTimeout limits the wait for '
+          'the response to start', () async {
+        final service = ServiceClient(client: MockClient(noResponse));
+
+        for (final (requestTimeout, streamWaitTimeout) in [
+          (timeout, timeout * 2),
+          (timeout * 2, timeout),
+        ]) {
+          await expectLater(
+            service.getStreaming(
+              sampleUrl,
+              enableSse: true,
+              timeout: requestTimeout,
+              streamWaitTimeout: streamWaitTimeout,
+            ),
+            emitsError(
+              isA<TimeoutException>()
+                  .having((e) => e.duration, 'duration', timeout)
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    contains('did not return any data'),
+                  ),
+            ),
+          );
+        }
+      });
+
       test('timeout limits the whole stream', () async {
         const timeout = Duration(milliseconds: 200);
         var cancelled = false;
