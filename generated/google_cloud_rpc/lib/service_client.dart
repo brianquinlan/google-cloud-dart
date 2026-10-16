@@ -403,9 +403,12 @@ class ServiceClient {
     required Duration? timeout,
     required Duration? streamWaitTimeout,
   }) {
-    final limit = timeout != null && streamWaitTimeout != null
-        ? (timeout < streamWaitTimeout ? timeout : streamWaitTimeout)
-        : timeout ?? streamWaitTimeout;
+    final limit = switch ((timeout, streamWaitTimeout)) {
+      (null, null) => null,
+      (Duration t, null) => t,
+      (null, Duration t) => t,
+      (Duration t1, Duration t2) => t1 < t2 ? t1 : t2,
+    };
     if (limit == null) return response;
     return response.timeout(
       limit,
