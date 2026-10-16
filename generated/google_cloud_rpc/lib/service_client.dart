@@ -67,6 +67,30 @@ const String _typeJson = 'application/json';
 /// An attempt that times out may continue in the background, and its result
 /// is ignored.
 class ServiceClient {
+  // As of 2026-10-16 there is no consistent timeout behavior for RPCs across
+  // implementations.
+  //
+  // For unary (non-streaming) requests:
+  // - Go, Python, and Node.js apply the timeout to the entire call, i.e., all
+  //   retries must complete within the timeout period.
+  // - Java and Rust apply the timeout to each request attempt independently and
+  //   use retry settings to limit the total call time.
+  //
+  // For streaming requests:
+  // - Go has a deadline that applies to the entire stream but with no default
+  //   timeout because of a concern for long-lived streams
+  //   (see https://github.com/googleapis/gapic-generator-go/issues/411).
+  // - Java has three timeout options for streams: a deadline for the entire
+  //   stream (`timeout`), a deadline for the gap between messages
+  //   (`streamWaitTimeout`), and a deadline for the caller asking for more
+  //   data (`streamIdleTimeout`).
+  // - Python (gRPC) has a deadline that applies to the entire stream.
+  // - Python (REST) has a deadline that applies to the gap between messages.
+  // - Node.js and Rust have deadlines that applies to the whole stream.
+  //
+  // This client follows the Java strategy, except that it does support
+  // `streamIdleTimeout`.
+
   final http.Client client;
 
   /// The version of the GAPIC-generated client library (e.g. `0.1.0`),
@@ -389,23 +413,6 @@ class ServiceClient {
           throw TimeoutException('Request to $url did not complete', timeout),
     );
   }
-
-  // As of 2026-10-16 there is no consistent timeout behavior for streaming RPCs
-  // across implementations:
-  // - Go has a deadline for the entire stream but with no default timeout
-  //   because of a concern for long-lived streams
-  //   (see https://github.com/googleapis/gapic-generator-go/issues/411).
-  // - Java has a three timeout options for streams: a deadline for the entire
-  //   stream (`timeout`), a deadline for the gap between messages
-  //   (`streamWaitTimeout`), and a deadline for the caller asking for more
-  //   data (`streamIdleTimeout`).
-  // - Python (gRPC) has a deadline for the whole stream.
-  // - Python (REST) has a deadline for the gap between messages.
-  // - Node.js and Rust have deadlines for the whole stream.
-  //
-  // This client follows Java, except that `streamWaitTimeout` limits the gap
-  // between chunks of data rather than between messages, and there is no
-  // equivalent of `streamIdleTimeout`.
 
   /// Cancels [response], which releases its connection.
   static Future<void> _cancel(http.StreamedResponse response) =>
