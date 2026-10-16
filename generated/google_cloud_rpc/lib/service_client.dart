@@ -88,7 +88,7 @@ class ServiceClient {
   // - Python (REST) has a deadline that applies to the gap between messages.
   // - Node.js and Rust have deadlines that applies to the whole stream.
   //
-  // This client follows the Java strategy, except that it does support
+  // This client follows the Java strategy, except that it does not support
   // `streamIdleTimeout`.
 
   final http.Client client;
