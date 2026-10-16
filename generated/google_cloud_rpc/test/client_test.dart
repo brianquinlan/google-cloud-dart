@@ -625,6 +625,36 @@ void main() {
         ]),
       );
     });
+
+    test('200 response, unsupported content type', () async {
+      var cancelled = false;
+      final service = ServiceClient(
+        client: MockClient.streaming(
+          (request, body) async => StreamedResponse(
+            StreamController<List<int>>(
+              onCancel: () => cancelled = true,
+            ).stream,
+            200,
+            headers: {'content-type': 'text/html'},
+          ),
+        ),
+      );
+
+      await expectLater(
+        service.postStreaming(sampleUrl, enableSse: true),
+        emitsInOrder([
+          emitsError(
+            isA<ServiceException>().having(
+              (e) => e.message,
+              'message',
+              contains('text/html'),
+            ),
+          ),
+          emitsDone,
+        ]),
+      );
+      expect(cancelled, isTrue, reason: 'the response should be cancelled');
+    });
   });
 
   group('retry', () {
@@ -1203,15 +1233,49 @@ void main() {
             );
           });
 
+          test('cancels a response that starts after the timeout', () async {
+            final responded = Completer<void>();
+            var cancelled = false;
+            final events = StreamController<List<int>>(
+              onCancel: () => cancelled = true,
+            );
+            final service = ServiceClient(
+              client: MockClient.streaming((request, body) async {
+                await Future<void>.delayed(timeout * 2);
+                responded.complete();
+                return StreamedResponse(
+                  events.stream,
+                  200,
+                  headers: sseHeaders,
+                );
+              }),
+            );
+
+            await expectLater(
+              send(service, parameter),
+              emitsInOrder([emitsError(isA<TimeoutException>()), emitsDone]),
+            );
+            await responded.future;
+            await pumpEventQueue();
+            expect(
+              cancelled,
+              isTrue,
+              reason: 'nothing reads a response that starts after the timeout',
+            );
+          });
+
           test('a JSON list response that does not arrive in time is '
-              'retried', () async {
+              'cancelled and retried', () async {
             var count = 0;
+            var cancelled = false;
             final service = ServiceClient(
               client: MockClient.streaming((request, body) async {
                 ++count;
                 return StreamedResponse(
                   count == 1
-                      ? Completer<List<int>>().future.asStream()
+                      ? StreamController<List<int>>(
+                          onCancel: () => cancelled = true,
+                        ).stream
                       : Stream.value(utf8.encode('[{"fruit":"apple"}]')),
                   200,
                   headers: {'content-type': 'application/json'},
@@ -1232,6 +1296,11 @@ void main() {
               ]),
             );
             expect(count, 2);
+            expect(
+              cancelled,
+              isTrue,
+              reason: 'the first response should be cancelled',
+            );
           });
 
           test('rejects a value that is not positive', () async {

@@ -309,48 +309,46 @@ class ServiceClient {
     _checkTimeout(streamWaitTimeout, 'streamWaitTimeout');
     final requestUrl = enableSse ? _makeUrlStreaming(url) : url;
     final encodedBody = body?._asEncodedJson;
-    final messages = await retry.run(
-      () => _withTimeout(requestUrl, timeout, () async {
-        // Lets `timeout` also limit the part of an event stream that is read
-        // after the attempt completes.
-        final stopwatch = Stopwatch()..start();
-        final response = await _withStartTimeout(
-          _send(requestUrl, method, encodedBody),
-          requestUrl,
-          streamWaitTimeout,
-        );
-        final bytes = _withStallTimeout(
-          response.stream,
-          requestUrl,
-          streamWaitTimeout,
-        );
-        switch (http.MediaType.parse(
-          response.headers['content-type'] ?? '',
-        ).mimeType) {
-          case 'application/json':
-            // The server responded with a non-streaming response, which should
-            // be a list of JSON objects. The whole body is read as part of the
-            // attempt, so a failure while reading it can be retried.
-            final responseBody = await utf8.decodeStream(bytes);
-            final json = (jsonDecode(responseBody) as List)
-                .cast<Map<String, dynamic>>();
-            return Stream.fromIterable(json);
-          case 'text/event-stream':
-            // The server responded with an event stream, which is what we
-            // expect. Events reach the caller as they arrive, so failures after
-            // this point are not retried, and whatever remains of `timeout`
-            // limits the rest of the stream.
-            return _decodeEvents(
-              _withRemainingTimeout(bytes, requestUrl, timeout, stopwatch),
-            );
-          default:
-            throw ServiceException(
-              'Unsupported content type: ${response.headers['content-type']}',
-              statusCode: response.statusCode,
-            );
-        }
-      }),
-    );
+    final messages = await retry.run(() async {
+      // `timeout` limits the whole attempt, including any part of an event
+      // stream that is read after the attempt completes.
+      final stopwatch = Stopwatch()..start();
+      final response = await _withStartTimeout(
+        _send(requestUrl, method, encodedBody),
+        requestUrl,
+        timeout: timeout,
+        streamWaitTimeout: streamWaitTimeout,
+      );
+      final bytes = _withRemainingTimeout(
+        _withStallTimeout(response.stream, requestUrl, streamWaitTimeout),
+        requestUrl,
+        timeout,
+        stopwatch,
+      );
+      switch (http.MediaType.parse(
+        response.headers['content-type'] ?? '',
+      ).mimeType) {
+        case 'application/json':
+          // The server responded with a non-streaming response, which should
+          // be a list of JSON objects. The whole body is read as part of the
+          // attempt, so a failure while reading it can be retried.
+          final responseBody = await utf8.decodeStream(bytes);
+          final json = (jsonDecode(responseBody) as List)
+              .cast<Map<String, dynamic>>();
+          return Stream.fromIterable(json);
+        case 'text/event-stream':
+          // The server responded with an event stream, which is what we
+          // expect. Events reach the caller as they arrive, so failures after
+          // this point are not retried.
+          return _decodeEvents(bytes);
+        default:
+          _cancel(response).ignore();
+          throw ServiceException(
+            'Unsupported content type: ${response.headers['content-type']}',
+            statusCode: response.statusCode,
+          );
+      }
+    });
     yield* messages;
   }
 
@@ -393,22 +391,42 @@ class ServiceClient {
   // equivalent of `streamIdleTimeout`.
 
   /// Waits for [response] to start, failing with a [TimeoutException] if it
-  /// doesn't start within [timeout].
+  /// doesn't start within [timeout] or [streamWaitTimeout].
   ///
-  /// A request that times out keeps running in the background, and its
-  /// response is ignored.
+  /// The request keeps running in the background after a timeout. If its
+  /// response starts anyway, the response is cancelled, because nothing will
+  /// read it.
   static Future<http.StreamedResponse> _withStartTimeout(
     Future<http.StreamedResponse> response,
-    Uri url,
-    Duration? timeout,
-  ) {
-    if (timeout == null) return response;
-    return response.timeout(
+    Uri url, {
+    required Duration? timeout,
+    required Duration? streamWaitTimeout,
+  }) {
+    Future<http.StreamedResponse> withLimit(
+      Future<http.StreamedResponse> future,
+      Duration? limit,
+      String message,
+    ) {
+      if (limit == null) return future;
+      return future.timeout(
+        limit,
+        onTimeout: () {
+          future.then(_cancel).ignore();
+          throw TimeoutException(message, limit);
+        },
+      );
+    }
+
+    return withLimit(
+      withLimit(response, streamWaitTimeout, 'No data received from $url'),
       timeout,
-      onTimeout: () =>
-          throw TimeoutException('No data received from $url', timeout),
+      'Request to $url did not complete',
     );
   }
+
+  /// Cancels [response], which releases its connection.
+  static Future<void> _cancel(http.StreamedResponse response) =>
+      response.stream.listen(null).cancel();
 
   /// [bytes], failing with a [TimeoutException] if no data arrives for
   /// [timeout].
