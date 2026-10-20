@@ -31,3 +31,7 @@
   if they use `projectId` (e.g.
   `GOOGLE_CLOUD_PROJECT=demo-project dart test -P firebase-emulator`).
 - Try to fix any test failures before declaring yourself done.
+- Running VM tests for packages that depend on `package:webcrypto` (e.g.
+  `google_cloud_auth`) runs a native build hook that searches for build tools
+  (such as CMake) outside of the repository, so `dart test` may fail in a
+  sandboxed shell that restricts file system access.
