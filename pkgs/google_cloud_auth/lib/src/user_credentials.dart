@@ -30,18 +30,6 @@ import 'platform_web.dart' if (dart.library.io) 'platform_io.dart';
 const _infoDescription = 'authorized user info';
 
 /// Credentials for a Google user account, authorized using OAuth 2.0.
-///
-/// User credentials consist of an OAuth 2.0 client ID and client secret, and a
-/// refresh token that is exchanged for short-lived access tokens. They are
-/// usually created by running `gcloud auth application-default login`, which
-/// stores them in a credentials file with the type `authorized_user`.
-///
-/// User credentials cannot sign data so, unlike `ServiceAccountCredentials`
-/// and `ComputeEngineCredentials`, they do not implement
-/// `ServiceAccountSigner`.
-///
-/// User credentials are only supported in the default `googleapis.com`
-/// universe domain.
 final class UserCredentials extends GoogleCredentials {
   /// The OAuth 2.0 client ID.
   final String clientId;
@@ -72,18 +60,7 @@ final class UserCredentials extends GoogleCredentials {
     ),
   );
 
-  /// Creates [UserCredentials] from an OAuth 2.0 [clientId], [clientSecret],
-  /// and [refreshToken].
-  ///
-  /// If [tokenUri] is not provided, then the Google OAuth 2.0 token endpoint
-  /// (`https://oauth2.googleapis.com/token`) is used.
-  ///
-  /// {@template google_cloud_auth.UserCredentials.clientFactory}
-  /// If provided, [clientFactory] is called to create the [http.Client]s used
-  /// to make requests. Each client it returns is closed after use, so it must
-  /// return a new client on every call.
-  /// {@endtemplate}
-  UserCredentials({
+  UserCredentials._({
     required this.clientId,
     required String clientSecret,
     required String refreshToken,
@@ -102,7 +79,9 @@ final class UserCredentials extends GoogleCredentials {
   /// `type` field must be `authorized_user` and the `universe_domain` field
   /// must be `googleapis.com`. Other fields, such as `token_uri`, are ignored.
   ///
-  /// {@macro google_cloud_auth.UserCredentials.clientFactory}
+  /// If provided, [clientFactory] is called to create the [http.Client]s used
+  /// to make requests. Each client it returns is closed after use, so it must
+  /// return a new client on every call.
   ///
   /// Throws a [FormatException] if [info] is not valid.
   factory UserCredentials.fromAuthorizedUserInfo(
@@ -127,7 +106,7 @@ final class UserCredentials extends GoogleCredentials {
       );
     }
 
-    return UserCredentials(
+    return UserCredentials._(
       clientId: requiredString(info, 'client_id', _infoDescription),
       clientSecret: requiredString(info, 'client_secret', _infoDescription),
       refreshToken: requiredString(info, 'refresh_token', _infoDescription),
@@ -141,7 +120,9 @@ final class UserCredentials extends GoogleCredentials {
   ///
   /// See [UserCredentials.fromAuthorizedUserInfo] for the supported fields.
   ///
-  /// {@macro google_cloud_auth.UserCredentials.clientFactory}
+  /// If provided, [clientFactory] is called to create the [http.Client]s used
+  /// to make requests. Each client it returns is closed after use, so it must
+  /// return a new client on every call.
   ///
   /// Throws a [FormatException] if [jsonString] is not valid.
   factory UserCredentials.fromAuthorizedUserString(
@@ -157,7 +138,9 @@ final class UserCredentials extends GoogleCredentials {
   ///
   /// See [UserCredentials.fromAuthorizedUserInfo] for the supported fields.
   ///
-  /// {@macro google_cloud_auth.UserCredentials.clientFactory}
+  /// If provided, [clientFactory] is called to create the [http.Client]s used
+  /// to make requests. Each client it returns is closed after use, so it must
+  /// return a new client on every call.
   ///
   /// Throws a [CredentialException] if reading [path] fails or when running on
   /// the web, and a [FormatException] if the file contents are not valid.
