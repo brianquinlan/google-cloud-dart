@@ -18,30 +18,16 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'access_token.dart';
 import 'credential_exception.dart';
 import 'google_credentials.dart';
+import 'json_utils.dart';
 import 'platform_web.dart' if (dart.library.io) 'platform_io.dart';
 
-String _requiredString(Map<String, dynamic> info, String key) {
-  final value = info[key];
-  if (value is! String || value.isEmpty) {
-    throw FormatException("Missing required '$key' in authorized user info.");
-  }
-  return value;
-}
-
-String? _optionalString(Map<String, dynamic> info, String key) {
-  final value = info[key];
-  if (value == null) return null;
-  if (value is! String) {
-    throw FormatException("The value of '$key' must be a string.");
-  }
-  return value;
-}
+const _infoDescription = 'authorized user info';
 
 /// Credentials for a Google user account, authorized using OAuth 2.0.
 ///
@@ -70,14 +56,21 @@ final class UserCredentials extends GoogleCredentials {
   final String _refreshToken;
   final FutureOr<http.Client> Function() _clientFactory;
 
-  String? _cachedAccessToken;
-  DateTime? _accessTokenExpiry;
-
-  /// The active request to fetch a new token.
-  ///
-  /// This is used to prevent multiple concurrent requests from fetching new
-  /// tokens at the same time.
-  Future<String>? _activeTokenRequest;
+  late final _accessTokenCache = AccessTokenCache(
+    () => fetchAccessToken(
+      clientFactory: _clientFactory,
+      source: tokenUri.toString(),
+      send: (client) => client.post(
+        tokenUri,
+        body: {
+          'grant_type': 'refresh_token',
+          'client_id': clientId,
+          'client_secret': _clientSecret,
+          'refresh_token': _refreshToken,
+        },
+      ),
+    ),
+  );
 
   /// Creates [UserCredentials] from an OAuth 2.0 [clientId], [clientSecret],
   /// and [refreshToken].
@@ -123,7 +116,7 @@ final class UserCredentials extends GoogleCredentials {
       );
     }
 
-    final universeDomain = _optionalString(info, 'universe_domain');
+    final universeDomain = optionalString(info, 'universe_domain');
     if (universeDomain != null &&
         universeDomain.isNotEmpty &&
         universeDomain != GoogleCredentials.defaultUniverseDomain) {
@@ -135,10 +128,10 @@ final class UserCredentials extends GoogleCredentials {
     }
 
     return UserCredentials(
-      clientId: _requiredString(info, 'client_id'),
-      clientSecret: _requiredString(info, 'client_secret'),
-      refreshToken: _requiredString(info, 'refresh_token'),
-      quotaProjectId: _optionalString(info, 'quota_project_id'),
+      clientId: requiredString(info, 'client_id', _infoDescription),
+      clientSecret: requiredString(info, 'client_secret', _infoDescription),
+      refreshToken: requiredString(info, 'refresh_token', _infoDescription),
+      quotaProjectId: optionalString(info, 'quota_project_id'),
       clientFactory: clientFactory,
     );
   }
@@ -154,18 +147,10 @@ final class UserCredentials extends GoogleCredentials {
   factory UserCredentials.fromAuthorizedUserString(
     String jsonString, {
     FutureOr<http.Client> Function()? clientFactory,
-  }) {
-    final json = jsonDecode(jsonString);
-    if (json is! Map<String, dynamic>) {
-      throw const FormatException(
-        'Authorized user string does not contain a JSON object.',
-      );
-    }
-    return UserCredentials.fromAuthorizedUserInfo(
-      json,
-      clientFactory: clientFactory,
-    );
-  }
+  }) => UserCredentials.fromAuthorizedUserInfo(
+    decodeJsonObject(jsonString),
+    clientFactory: clientFactory,
+  );
 
   /// Creates [UserCredentials] from an authorized user JSON file at [path],
   /// such as the one created by `gcloud auth application-default login`.
@@ -195,75 +180,6 @@ final class UserCredentials extends GoogleCredentials {
   /// It is safe to call this method concurrently.
   ///
   /// Throws [CredentialException] on failure.
-  Future<String> accessToken({bool forceRefresh = false}) async {
-    if (!forceRefresh &&
-        _cachedAccessToken != null &&
-        _accessTokenExpiry != null) {
-      if (DateTime.timestamp().isBefore(
-        _accessTokenExpiry!.subtract(const Duration(minutes: 1)),
-      )) {
-        return _cachedAccessToken!;
-      }
-    }
-
-    return await (_activeTokenRequest ??= _fetchAccessToken().whenComplete(() {
-      _activeTokenRequest = null;
-    }));
-  }
-
-  Future<String> _fetchAccessToken() async {
-    final http.Response response;
-    try {
-      final client = await _clientFactory();
-      try {
-        response = await client.post(
-          tokenUri,
-          body: {
-            'grant_type': 'refresh_token',
-            'client_id': clientId,
-            'client_secret': _clientSecret,
-            'refresh_token': _refreshToken,
-          },
-        );
-      } finally {
-        client.close();
-      }
-    } on Exception catch (e, stackTrace) {
-      throw CredentialException(
-        'Failed to get access token from $tokenUri: $e',
-        innerException: e,
-        innerStackTrace: stackTrace,
-      );
-    }
-
-    if (response.statusCode != 200) {
-      throw CredentialException(
-        'Failed to get access token from $tokenUri: '
-        'HTTP ${response.statusCode} ${response.body}',
-      );
-    }
-
-    try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        throw const FormatException('Expected JSON object.');
-      }
-      final accessToken = decoded['access_token'];
-      final expiresIn = decoded['expires_in'];
-      if (accessToken is! String || accessToken.isEmpty || expiresIn is! num) {
-        throw const FormatException('Missing access_token or expires_in');
-      }
-      _cachedAccessToken = accessToken;
-      _accessTokenExpiry = DateTime.timestamp().add(
-        Duration(seconds: expiresIn.toInt()),
-      );
-      return accessToken;
-    } on FormatException catch (e, stackTrace) {
-      throw CredentialException(
-        'Failed to parse token response from $tokenUri: $e',
-        innerException: e,
-        innerStackTrace: stackTrace,
-      );
-    }
-  }
+  Future<String> accessToken({bool forceRefresh = false}) =>
+      _accessTokenCache.accessToken(forceRefresh: forceRefresh);
 }
