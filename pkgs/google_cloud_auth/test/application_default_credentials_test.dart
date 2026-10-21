@@ -297,17 +297,11 @@ void main() {
 
         expect(
           credentials,
-          isA<UserCredentials>()
-              .having(
-                (e) => e.clientId,
-                'clientId',
-                'test-client-id.apps.googleusercontent.com',
-              )
-              .having(
-                (e) => e.quotaProjectId,
-                'quotaProjectId',
-                'test-project',
-              ),
+          isA<UserCredentials>().having(
+            (e) => e.quotaProjectId,
+            'quotaProjectId',
+            'test-project',
+          ),
         );
       });
 
@@ -325,9 +319,9 @@ void main() {
         expect(
           credentials,
           isA<UserCredentials>().having(
-            (e) => e.clientId,
-            'clientId',
-            'test-client-id.apps.googleusercontent.com',
+            (e) => e.quotaProjectId,
+            'quotaProjectId',
+            'test-project',
           ),
         );
       });

@@ -8,6 +8,10 @@
 - Wrap Markdown (`*.md`) files at 80 columns.
 - Update this file if you discover something useful about developing in this
   repository.
+- In a sandboxed shell that cannot read the home directory, `dart` commands
+  may crash while reading `~/.dart-tool/dart-flutter-telemetry.config`. Pass
+  `--suppress-analytics` to avoid this (e.g.
+  `dart --suppress-analytics analyze .`).
 
 ## Style
 

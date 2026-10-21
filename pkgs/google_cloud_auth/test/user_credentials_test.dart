@@ -42,17 +42,25 @@ http.Response _tokenResponse(String accessToken, {int expiresIn = 3600}) =>
       200,
     );
 
-UserCredentials _credentials(MockClientHandler handler) => UserCredentials(
-  clientId: 'test-client-id',
-  clientSecret: 'test-client-secret',
-  refreshToken: 'test-refresh-token',
-  clientFactory: () => MockClient(handler),
-);
+/// A client factory whose clients add each request to [requests] and respond
+/// with an access token.
+http.Client Function() _recordingClientFactory(List<http.Request> requests) =>
+    () => MockClient((request) async {
+      requests.add(request);
+      return _tokenResponse('access-token');
+    });
+
+UserCredentials _credentials(MockClientHandler handler) =>
+    UserCredentials.fromAuthorizedUserInfo(
+      _testInfo,
+      clientFactory: () => MockClient(handler),
+    );
 
 void main() {
   group('UserCredentials', () {
     group('fromAuthorizedUserInfo', () {
-      test('all keys set', () {
+      test('all keys set', () async {
+        final requests = <http.Request>[];
         final creds = UserCredentials.fromAuthorizedUserInfo({
           'type': 'authorized_user',
           'client_id': 'client-123.apps.googleusercontent.com',
@@ -61,34 +69,51 @@ void main() {
           'quota_project_id': 'quota-project',
           'universe_domain': 'googleapis.com',
           'account': '',
-        });
+        }, clientFactory: _recordingClientFactory(requests));
 
-        expect(creds.clientId, 'client-123.apps.googleusercontent.com');
         expect(creds.quotaProjectId, 'quota-project');
-        expect(creds.tokenUri, _defaultTokenUri);
         expect(creds.universeDomain, 'googleapis.com');
-      });
 
-      test('minimal keys set', () {
-        final creds = UserCredentials.fromAuthorizedUserInfo({
+        await creds.accessToken();
+        expect(requests.single.url, _defaultTokenUri);
+        expect(requests.single.bodyFields, {
+          'grant_type': 'refresh_token',
           'client_id': 'client-123.apps.googleusercontent.com',
           'client_secret': 'secret-123',
           'refresh_token': 'refresh-123',
         });
-
-        expect(creds.clientId, 'client-123.apps.googleusercontent.com');
-        expect(creds.quotaProjectId, isNull);
-        expect(creds.tokenUri, _defaultTokenUri);
-        expect(creds.universeDomain, 'googleapis.com');
       });
 
-      test('ignores token_uri', () {
+      test('minimal keys set', () async {
+        final requests = <http.Request>[];
+        final creds = UserCredentials.fromAuthorizedUserInfo({
+          'client_id': 'client-123.apps.googleusercontent.com',
+          'client_secret': 'secret-123',
+          'refresh_token': 'refresh-123',
+        }, clientFactory: _recordingClientFactory(requests));
+
+        expect(creds.quotaProjectId, isNull);
+        expect(creds.universeDomain, 'googleapis.com');
+
+        await creds.accessToken();
+        expect(requests.single.url, _defaultTokenUri);
+        expect(requests.single.bodyFields, {
+          'grant_type': 'refresh_token',
+          'client_id': 'client-123.apps.googleusercontent.com',
+          'client_secret': 'secret-123',
+          'refresh_token': 'refresh-123',
+        });
+      });
+
+      test('ignores token_uri', () async {
+        final requests = <http.Request>[];
         final creds = UserCredentials.fromAuthorizedUserInfo({
           ..._testInfo,
           'token_uri': 'https://example.com/token',
-        });
+        }, clientFactory: _recordingClientFactory(requests));
 
-        expect(creds.tokenUri, _defaultTokenUri);
+        await creds.accessToken();
+        expect(requests.single.url, _defaultTokenUri);
       });
 
       test('accepts empty universe_domain', () {
@@ -183,13 +208,23 @@ void main() {
     });
 
     group('fromAuthorizedUserString', () {
-      test('loads credentials from string', () {
+      test('loads credentials from string', () async {
+        final requests = <http.Request>[];
         final creds = UserCredentials.fromAuthorizedUserString(
           jsonEncode({..._testInfo, 'quota_project_id': 'quota-project'}),
+          clientFactory: _recordingClientFactory(requests),
         );
 
-        expect(creds.clientId, 'test-client-id.apps.googleusercontent.com');
         expect(creds.quotaProjectId, 'quota-project');
+
+        await creds.accessToken();
+        expect(
+          requests.single.bodyFields,
+          containsPair(
+            'client_id',
+            'test-client-id.apps.googleusercontent.com',
+          ),
+        );
       });
 
       test('throws on invalid JSON', () {
@@ -225,15 +260,25 @@ void main() {
           'application_default_credentials.json',
           jsonString,
         );
+        final requests = <http.Request>[];
 
         final creds = await UserCredentials.fromAuthorizedUserFile(
           tempFilePath,
+          clientFactory: _recordingClientFactory(requests),
         );
 
-        expect(creds.clientId, 'test-client-id.apps.googleusercontent.com');
         expect(creds.quotaProjectId, 'test-project');
-        expect(creds.tokenUri, _defaultTokenUri);
         expect(creds.universeDomain, 'googleapis.com');
+
+        await creds.accessToken();
+        expect(requests.single.url, _defaultTokenUri);
+        expect(
+          requests.single.bodyFields,
+          containsPair(
+            'client_id',
+            'test-client-id.apps.googleusercontent.com',
+          ),
+        );
       }, testOn: 'vm');
 
       test(
@@ -268,27 +313,10 @@ void main() {
         );
         expect(request.bodyFields, {
           'grant_type': 'refresh_token',
-          'client_id': 'test-client-id',
+          'client_id': 'test-client-id.apps.googleusercontent.com',
           'client_secret': 'test-client-secret',
           'refresh_token': 'test-refresh-token',
         });
-      });
-
-      test('uses custom tokenUri', () async {
-        final requestedUris = <Uri>[];
-        final creds = UserCredentials(
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token',
-          tokenUri: Uri.https('oauth2.example.com', '/token'),
-          clientFactory: () => MockClient((request) async {
-            requestedUris.add(request.url);
-            return _tokenResponse('access-token');
-          }),
-        );
-
-        expect(await creds.accessToken(), 'access-token');
-        expect(requestedUris, [Uri.https('oauth2.example.com', '/token')]);
       });
 
       test('fetches and caches access token', () async {

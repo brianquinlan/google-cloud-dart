@@ -29,17 +29,14 @@ import 'platform_web.dart' if (dart.library.io) 'platform_io.dart';
 
 const _infoDescription = 'authorized user info';
 
+final _tokenUri = Uri.https('oauth2.googleapis.com', '/token');
+
 /// Credentials for a Google user account, authorized using OAuth 2.0.
 final class UserCredentials extends GoogleCredentials {
-  /// The OAuth 2.0 client ID.
-  final String clientId;
-
   /// The quota project ID associated with the credentials, if available.
   final String? quotaProjectId;
 
-  /// The OAuth 2.0 token endpoint URI.
-  final Uri tokenUri;
-
+  final String _clientId;
   final String _clientSecret;
   final String _refreshToken;
   final FutureOr<http.Client> Function() _clientFactory;
@@ -47,12 +44,12 @@ final class UserCredentials extends GoogleCredentials {
   late final _accessTokenCache = AccessTokenCache(
     () => fetchAccessToken(
       clientFactory: _clientFactory,
-      source: tokenUri.toString(),
+      source: _tokenUri.toString(),
       send: (client) => client.post(
-        tokenUri,
+        _tokenUri,
         body: {
           'grant_type': 'refresh_token',
-          'client_id': clientId,
+          'client_id': _clientId,
           'client_secret': _clientSecret,
           'refresh_token': _refreshToken,
         },
@@ -61,15 +58,14 @@ final class UserCredentials extends GoogleCredentials {
   );
 
   UserCredentials._({
-    required this.clientId,
+    required String clientId,
     required String clientSecret,
     required String refreshToken,
     this.quotaProjectId,
-    Uri? tokenUri,
     FutureOr<http.Client> Function()? clientFactory,
-  }) : _clientSecret = clientSecret,
+  }) : _clientId = clientId,
+       _clientSecret = clientSecret,
        _refreshToken = refreshToken,
-       tokenUri = tokenUri ?? Uri.https('oauth2.googleapis.com', '/token'),
        _clientFactory = clientFactory ?? http.Client.new;
 
   /// Creates [UserCredentials] from parsed authorized user JSON [info].
@@ -158,7 +154,8 @@ final class UserCredentials extends GoogleCredentials {
   /// A non-expired current OAuth2 access token for the user.
   ///
   /// If the cached token is expired or if [forceRefresh] is `true`, then a new
-  /// token is obtained from [tokenUri] using the refresh token.
+  /// token is obtained from the Google OAuth 2.0 token endpoint using the
+  /// refresh token.
   ///
   /// It is safe to call this method concurrently.
   ///
