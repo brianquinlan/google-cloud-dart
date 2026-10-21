@@ -265,6 +265,26 @@ void main() {
       expect(count, 1);
     });
 
+    test('shares a failed fetch between concurrent callers', () async {
+      final completer = Completer<TokenResponse>();
+      var count = 0;
+      final cache = AccessTokenCache(() {
+        count++;
+        return completer.future;
+      }, clock: () => now);
+
+      final expectations = [
+        expectLater(cache.accessToken(), throwsA(isA<CredentialException>())),
+        expectLater(cache.accessToken(), throwsA(isA<CredentialException>())),
+      ];
+      await pumpEventQueue();
+      expect(count, 1);
+
+      completer.completeError(CredentialException('Fetch failed'));
+      await Future.wait(expectations);
+      expect(count, 1);
+    });
+
     test('keeps the cached token when a fetch fails', () async {
       var fail = false;
       var count = 0;

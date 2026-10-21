@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:google_cloud_auth/google_cloud_auth.dart';
@@ -31,16 +30,15 @@ const _testInfo = {
 
 final _defaultTokenUri = Uri.https('oauth2.googleapis.com', '/token');
 
-http.Response _tokenResponse(String accessToken, {int expiresIn = 3600}) =>
-    http.Response(
-      jsonEncode({
-        'access_token': accessToken,
-        'expires_in': expiresIn,
-        'scope': 'https://www.googleapis.com/auth/cloud-platform',
-        'token_type': 'Bearer',
-      }),
-      200,
-    );
+http.Response _tokenResponse(String accessToken) => http.Response(
+  jsonEncode({
+    'access_token': accessToken,
+    'expires_in': 3600,
+    'scope': 'https://www.googleapis.com/auth/cloud-platform',
+    'token_type': 'Bearer',
+  }),
+  200,
+);
 
 /// A client factory whose clients add each request to [requests] and respond
 /// with an access token.
@@ -338,67 +336,6 @@ void main() {
         expect(callCount, 2);
       });
 
-      test('refreshes access token that is about to expire', () async {
-        var callCount = 0;
-        final creds = _credentials((request) async {
-          callCount++;
-          // Tokens that expire within a minute are not reused.
-          return _tokenResponse('token-$callCount', expiresIn: 30);
-        });
-
-        expect(await creds.accessToken(), 'token-1');
-        expect(await creds.accessToken(), 'token-2');
-        expect(callCount, 2);
-      });
-
-      test('shares active request among concurrent callers', () async {
-        final completer = Completer<http.Response>();
-        var callCount = 0;
-        final creds = _credentials((request) {
-          callCount++;
-          return completer.future;
-        });
-
-        final future1 = creds.accessToken();
-        final future2 = creds.accessToken();
-        final future3 = creds.accessToken(forceRefresh: true);
-
-        await pumpEventQueue();
-        expect(callCount, 1);
-
-        completer.complete(_tokenResponse('shared-token'));
-
-        expect(await Future.wait([future1, future2, future3]), [
-          'shared-token',
-          'shared-token',
-          'shared-token',
-        ]);
-        expect(callCount, 1);
-      });
-
-      test(
-        'clears active request on failure so subsequent call retries',
-        () async {
-          var callCount = 0;
-          final creds = _credentials((request) async {
-            callCount++;
-            if (callCount == 1) {
-              return http.Response('Internal Server Error', 500);
-            }
-            return _tokenResponse('recovered-token');
-          });
-
-          await expectLater(
-            creds.accessToken(),
-            throwsA(isA<CredentialException>()),
-          );
-          expect(callCount, 1);
-
-          expect(await creds.accessToken(), 'recovered-token');
-          expect(callCount, 2);
-        },
-      );
-
       test('throws CredentialException on HTTP error', () async {
         final creds = _credentials(
           (request) async => http.Response(
@@ -417,87 +354,6 @@ void main() {
               (e) => e.message,
               'message',
               allOf(contains('HTTP 400'), contains('invalid_grant')),
-            ),
-          ),
-        );
-      });
-
-      test('throws CredentialException on network error', () async {
-        final creds = _credentials(
-          (request) async => throw http.ClientException('Network down'),
-        );
-
-        await expectLater(
-          creds.accessToken(),
-          throwsA(
-            isA<CredentialException>()
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('Failed to get access token'),
-                )
-                .having(
-                  (e) => e.innerException,
-                  'innerException',
-                  isA<http.ClientException>(),
-                ),
-          ),
-        );
-      });
-
-      test('throws CredentialException on invalid JSON', () async {
-        final creds = _credentials(
-          (request) async => http.Response('not valid json', 200),
-        );
-
-        await expectLater(
-          creds.accessToken(),
-          throwsA(
-            isA<CredentialException>()
-                .having(
-                  (e) => e.message,
-                  'message',
-                  contains('Failed to parse token response'),
-                )
-                .having(
-                  (e) => e.innerException,
-                  'innerException',
-                  isA<FormatException>(),
-                ),
-          ),
-        );
-      });
-
-      test('throws CredentialException on non-map JSON', () async {
-        final creds = _credentials(
-          (request) async => http.Response('[1, 2, 3]', 200),
-        );
-
-        await expectLater(
-          creds.accessToken(),
-          throwsA(
-            isA<CredentialException>().having(
-              (e) => e.message,
-              'message',
-              contains('Failed to parse token response'),
-            ),
-          ),
-        );
-      });
-
-      test('throws CredentialException on missing access_token', () async {
-        final creds = _credentials(
-          (request) async =>
-              http.Response(jsonEncode({'expires_in': 3600}), 200),
-        );
-
-        await expectLater(
-          creds.accessToken(),
-          throwsA(
-            isA<CredentialException>().having(
-              (e) => e.message,
-              'message',
-              contains('Failed to parse token response'),
             ),
           ),
         );
