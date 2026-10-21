@@ -41,17 +41,11 @@ final class _TrackingClient extends http.BaseClient {
   }
 }
 
-Future<TokenResponse> _fetch(http.Client client) => fetchAccessToken(
-  clientFactory: () => client,
-  send: (client) => client.get(_tokenUri),
-  source: 'test endpoint',
-);
-
 void main() {
   group('fetchAccessToken', () {
     test('parses token response', () async {
-      final response = await _fetch(
-        MockClient(
+      final response = await fetchAccessToken(
+        clientFactory: () => MockClient(
           (request) async => http.Response(
             jsonEncode({
               'access_token': 'test-token',
@@ -61,6 +55,8 @@ void main() {
             200,
           ),
         ),
+        send: (client) => client.get(_tokenUri),
+        source: 'test endpoint',
       );
 
       expect(response.accessToken, 'test-token');
@@ -77,7 +73,11 @@ void main() {
         ),
       );
 
-      await _fetch(client);
+      await fetchAccessToken(
+        clientFactory: () => client,
+        send: (client) => client.get(_tokenUri),
+        source: 'test endpoint',
+      );
       expect(client.closed, isTrue);
     });
 
@@ -88,16 +88,25 @@ void main() {
         ),
       );
 
-      await expectLater(_fetch(client), throwsA(isA<CredentialException>()));
+      await expectLater(
+        fetchAccessToken(
+          clientFactory: () => client,
+          send: (client) => client.get(_tokenUri),
+          source: 'test endpoint',
+        ),
+        throwsA(isA<CredentialException>()),
+      );
       expect(client.closed, isTrue);
     });
 
     test('throws CredentialException on network error', () async {
       await expectLater(
-        _fetch(
-          MockClient(
+        fetchAccessToken(
+          clientFactory: () => MockClient(
             (request) async => throw http.ClientException('Network down'),
           ),
+          send: (client) => client.get(_tokenUri),
+          source: 'test endpoint',
         ),
         throwsA(
           isA<CredentialException>()
@@ -134,20 +143,19 @@ void main() {
 
     test('throws CredentialException on HTTP error', () async {
       await expectLater(
-        _fetch(
-          MockClient(
+        fetchAccessToken(
+          clientFactory: () => MockClient(
             (request) async => http.Response('{"error": "invalid_grant"}', 400),
           ),
+          send: (client) => client.get(_tokenUri),
+          source: 'test endpoint',
         ),
         throwsA(
           isA<CredentialException>().having(
             (e) => e.message,
             'message',
-            allOf(
-              contains('Failed to get access token from test endpoint'),
-              contains('HTTP 400'),
-              contains('invalid_grant'),
-            ),
+            'Bad HTTP status response when fetching access token from test '
+                'endpoint: 400',
           ),
         ),
       );
@@ -166,7 +174,12 @@ void main() {
     }.entries) {
       test('throws CredentialException on $description', () async {
         await expectLater(
-          _fetch(MockClient((request) async => http.Response(body, 200))),
+          fetchAccessToken(
+            clientFactory: () =>
+                MockClient((request) async => http.Response(body, 200)),
+            send: (client) => client.get(_tokenUri),
+            source: 'test endpoint',
+          ),
           throwsA(
             isA<CredentialException>()
                 .having(

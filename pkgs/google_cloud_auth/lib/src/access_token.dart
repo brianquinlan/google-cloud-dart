@@ -62,25 +62,26 @@ Future<TokenResponse> fetchAccessToken({
 
   if (response.statusCode != 200) {
     throw CredentialException(
-      'Failed to get access token from $source: '
-      'HTTP ${response.statusCode} ${response.body}',
+      'Bad HTTP status response when fetching access token from $source: '
+      '${response.statusCode}',
     );
   }
 
   try {
     final json = decodeJsonObject(response.body);
     final accessToken = requiredString(json, 'access_token', 'token response');
-    final expiresIn = json['expires_in'];
-    // `jsonDecode` produces infinity for numbers too large for a double, and
-    // `toInt` throws for infinity.
-    if (expiresIn is! num || !expiresIn.isFinite) {
-      throw const FormatException(
+    final expiresIn = switch (json['expires_in']) {
+      null => throw const FormatException(
         "Missing required 'expires_in' in token response.",
-      );
-    }
+      ),
+      num n when n.isFinite => n,
+      _ => throw const FormatException(
+        "Invalid 'expires_in' in token response.",
+      ),
+    };
     return (
       accessToken: accessToken,
-      expiresIn: Duration(seconds: expiresIn.toInt()),
+      expiresIn: Duration(seconds: expiresIn.truncate()),
     );
   } on FormatException catch (e, stackTrace) {
     throw CredentialException(
@@ -114,8 +115,8 @@ final class AccessTokenCache {
 
   /// A non-expired access token.
   ///
-  /// If the cached token expires within a minute, or if [forceRefresh] is
-  /// `true`, then a new token is fetched.
+  /// If the cached token expires within `_expiryMargin`, or if [forceRefresh]
+  /// is `true`, then a new token is fetched.
   ///
   /// It is safe to call this method concurrently: concurrent callers share a
   /// single fetch.

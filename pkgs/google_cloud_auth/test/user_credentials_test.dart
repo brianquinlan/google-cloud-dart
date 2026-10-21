@@ -353,7 +353,7 @@ void main() {
             isA<CredentialException>().having(
               (e) => e.message,
               'message',
-              allOf(contains('HTTP 400'), contains('invalid_grant')),
+              contains('$_defaultTokenUri: 400'),
             ),
           ),
         );
