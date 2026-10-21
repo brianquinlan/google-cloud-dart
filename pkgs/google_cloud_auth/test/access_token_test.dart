@@ -63,6 +63,21 @@ void main() {
       expect(response.expiresIn, const Duration(seconds: 3599));
     });
 
+    test('truncates fractional expires_in', () async {
+      final response = await fetchAccessToken(
+        clientFactory: () => MockClient(
+          (request) async => http.Response(
+            jsonEncode({'access_token': 'test-token', 'expires_in': 3599.9}),
+            200,
+          ),
+        ),
+        send: (client) => client.get(_tokenUri),
+        source: 'test endpoint',
+      );
+
+      expect(response.expiresIn, const Duration(seconds: 3599));
+    });
+
     test('closes the client', () async {
       final client = _TrackingClient(
         MockClient(
@@ -161,17 +176,36 @@ void main() {
       );
     });
 
-    for (final MapEntry(key: description, value: body) in {
-      'invalid JSON': 'not valid json',
-      'non-object JSON': '[1, 2, 3]',
-      'missing access_token': '{"expires_in": 3600}',
-      'empty access_token': '{"access_token": "", "expires_in": 3600}',
-      'missing expires_in': '{"access_token": "test-token"}',
-      'non-numeric expires_in':
-          '{"access_token": "test-token", "expires_in": "3600"}',
-      'infinite expires_in':
-          '{"access_token": "test-token", "expires_in": 1e400}',
-    }.entries) {
+    for (final (description, body, message) in [
+      // The message from `jsonDecode` differs between platforms.
+      ('invalid JSON', 'not valid json', anything),
+      ('non-object JSON', '[1, 2, 3]', 'Expected a JSON object.'),
+      (
+        'missing access_token',
+        '{"expires_in": 3600}',
+        "Missing required 'access_token' in token response.",
+      ),
+      (
+        'empty access_token',
+        '{"access_token": "", "expires_in": 3600}',
+        "Missing required 'access_token' in token response.",
+      ),
+      (
+        'missing expires_in',
+        '{"access_token": "test-token"}',
+        "Missing required 'expires_in' in token response.",
+      ),
+      (
+        'non-numeric expires_in',
+        '{"access_token": "test-token", "expires_in": "3600"}',
+        "Invalid 'expires_in' in token response.",
+      ),
+      (
+        'infinite expires_in',
+        '{"access_token": "test-token", "expires_in": 1e400}',
+        "Invalid 'expires_in' in token response.",
+      ),
+    ]) {
       test('throws CredentialException on $description', () async {
         await expectLater(
           fetchAccessToken(
@@ -190,7 +224,11 @@ void main() {
                 .having(
                   (e) => e.innerException,
                   'innerException',
-                  isA<FormatException>(),
+                  isA<FormatException>().having(
+                    (e) => e.message,
+                    'message',
+                    message,
+                  ),
                 ),
           ),
         );
