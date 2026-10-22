@@ -28319,7 +28319,7 @@ final class PredictionService {
     final url = _endPoint.replace(
       path: '/v1beta1/${request.endpoint}:rawPredict',
     );
-    final response = await _client.post(url, body: request);
+    final response = await _client.post(url, body: request.httpBody);
     return HttpBody.fromJson(response);
   }
 
@@ -28333,7 +28333,7 @@ final class PredictionService {
       path: '/v1beta1/${request.endpoint}:streamRawPredict',
     );
     return _client
-        .postStreaming(url, body: request, enableSse: true)
+        .postStreaming(url, body: request.httpBody, enableSse: true)
         .map(HttpBody.fromJson);
   }
 

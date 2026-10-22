@@ -6193,7 +6193,7 @@ final class EchoRequest extends ProtoMessage {
   final String requestId;
 
   /// To facilitate testing of https://google.aip.dev/client-libraries/4235
-  final String? otherRequestId;
+  final String otherRequestId;
 
   EchoRequest({
     this.content,
@@ -6201,9 +6201,11 @@ final class EchoRequest extends ProtoMessage {
     this.severity = Severity.$default,
     this.header = '',
     this.otherHeader = '',
-    this.requestId = '',
-    this.otherRequestId,
-  }) : super(fullyQualifiedName);
+    String? requestId,
+    String? otherRequestId,
+  }) : requestId = requestId ?? uuid4(),
+       otherRequestId = otherRequestId ?? uuid4(),
+       super(fullyQualifiedName);
 
   factory EchoRequest.fromJson(Object? j) {
     final json = j as Map<String, Object?>;
@@ -6233,7 +6235,7 @@ final class EchoRequest extends ProtoMessage {
         Object $1 => decodeString($1),
       },
       otherRequestId: switch (json['otherRequestId']) {
-        null => null,
+        null => '',
         Object $1 => decodeString($1),
       },
     );
@@ -6247,7 +6249,7 @@ final class EchoRequest extends ProtoMessage {
     if (header.isNotDefault) 'header': header,
     if (otherHeader.isNotDefault) 'otherHeader': otherHeader,
     if (requestId.isNotDefault) 'requestId': requestId,
-    'otherRequestId': ?otherRequestId,
+    if (otherRequestId.isNotDefault) 'otherRequestId': otherRequestId,
   };
 
   @override
@@ -6258,7 +6260,7 @@ final class EchoRequest extends ProtoMessage {
       'header=$header',
       'otherHeader=$otherHeader',
       'requestId=$requestId',
-      if (otherRequestId != null) 'otherRequestId=$otherRequestId',
+      'otherRequestId=$otherRequestId',
     ].join(',');
     return 'EchoRequest(${$contents})';
   }
