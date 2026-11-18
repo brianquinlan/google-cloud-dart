@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:google_cloud_storage/google_cloud_storage.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
@@ -71,6 +72,36 @@ void main() async {
         // than to create a bucket and assume that it is associated with the
         // correct project.
         await createBucketWithTearDown(storage, 'stg_w_fut_cl');
+      });
+
+      test('constructor with credentials', () async {
+        final credentials = await defaultCredentials();
+        if (credentials is ServiceAccountCredentials) {
+          markTestSkipped(
+            'ServiceAccountCredentials.accessToken not yet implemented (#391)',
+          );
+          return;
+        }
+
+        storage = Storage(credentials: credentials);
+        addTearDown(storage.close);
+
+        await createBucketWithTearDown(storage, 'stg_w_creds');
+      });
+
+      test('constructor with future credentials', () async {
+        final credentials = await defaultCredentials();
+        if (credentials is ServiceAccountCredentials) {
+          markTestSkipped(
+            'ServiceAccountCredentials.accessToken not yet implemented (#391)',
+          );
+          return;
+        }
+
+        storage = Storage(credentials: Future.value(credentials));
+        addTearDown(storage.close);
+
+        await createBucketWithTearDown(storage, 'stg_w_fut_creds');
       });
 
       test('constructor with project id', () async {
