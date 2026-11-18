@@ -31,6 +31,9 @@ library;
 // ignore_for_file: non_constant_identifier_names
 // ignore_for_file: unintended_html_in_doc_comment
 
+import 'dart:async';
+
+import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:google_cloud_protobuf/protobuf.dart';
 import 'package:google_cloud_protobuf/src/encoding.dart';
 import 'package:google_cloud_rpc/service_client.dart';
@@ -40,59 +43,99 @@ import 'version.dart';
 
 const _apiKeys = ['GOOGLE_API_KEY'];
 
+http.Client _createHttpClient({
+  required FutureOr<Credentials>? credentials,
+  required http.Client? client,
+  required FutureOr<http.Client> Function()? clientFactory,
+  required String universeDomain,
+}) {
+  if (client != null) {
+    if (credentials != null || clientFactory != null) {
+      if (credentials is Future<Credentials>) {
+        credentials.ignore();
+      }
+      throw ArgumentError(
+        'Cannot provide both client and credentials or clientFactory.',
+      );
+    }
+    return client;
+  }
+  return AuthClient(
+    credentials: credentials,
+    clientFactory: clientFactory,
+    universeDomain: universeDomain,
+  );
+}
+
 /// Provides text analysis operations such as sentiment analysis and entity
 /// recognition.
 final class LanguageService {
-  static const _defaultHost = 'language.googleapis.com';
   final Uri _endPoint;
 
   final ServiceClient _client;
 
-  /// Creates a `LanguageService` using [client] for transport.
+  /// Creates a `LanguageService` client.
   ///
-  /// The provided [http.Client] must be configured to provide whatever
-  /// authentication is required by `LanguageService`. You can do that using
-  /// [`package:googleapis_auth`](https://pub.dev/packages/googleapis_auth).
+  /// By default, the client authenticates using [defaultCredentials]. Pass
+  /// [credentials] to use explicit credentials (or [NoCredentials] for
+  /// unauthenticated endpoints such as local emulators).
+  ///
+  /// To customize the underlying unauthenticated HTTP transport used for both
+  /// credential and API requests, pass [clientFactory].
+  ///
+  /// Alternatively, an already-authenticated [client] may be provided directly.
+  /// [client] cannot be combined with [credentials] or [clientFactory].
   ///
   /// If [endPoint] is provided then its `scheme`, `host`, and `port` are
   /// used for all API requests. For example, `Uri.http('127.0.0.1:8080')`
-  /// could be used to force the `Firestore` service to communicate with the
-  /// local emulator.
+  /// could be used to communicate with a local emulator.
   ///
   /// If [gcclVersion] is set then `gccl/<version>` will be included in the
-  /// `x-google-api-client` header. This argument is only meant for use by
+  /// `x-goog-api-client` header. This argument is only meant for use by
   /// hand-written official Google Cloud API clients.
   LanguageService({
-    required http.Client client,
+    FutureOr<Credentials>? credentials,
+    http.Client? client,
+    FutureOr<http.Client> Function()? clientFactory,
     Uri? endPoint,
+    String universeDomain = Credentials.defaultUniverseDomain,
     String? gcclVersion,
   }) : _client = ServiceClient(
-         client: client,
+         client: _createHttpClient(
+           credentials: credentials,
+           client: client,
+           clientFactory: clientFactory,
+           universeDomain: universeDomain,
+         ),
          gapicVersion: packageVersion,
          gcclVersion: gcclVersion,
        ),
        _endPoint = endPoint == null
-           ? Uri.https(_defaultHost, '')
+           ? Uri.https('language.$universeDomain', '')
            : Uri(
                scheme: endPoint.scheme,
                host: endPoint.host,
                port: endPoint.port,
              );
 
-  /// Creates a `LanguageService` that does authentication through an API key.
+  /// Creates a `LanguageService` that authenticates using an API key.
   ///
   /// If called without arguments, the API key is taken from these environment
   /// variables:
   ///
   /// - `GOOGLE_API_KEY`
   ///
-  /// Throws [ConfigurationException] if called without arguments and none of
+  /// Throws [CredentialException] if called without arguments and none of
   /// the above environment variables are set. On the web,
-  /// always throws [ConfigurationException] if called without arguments.
+  /// always throws [CredentialException] if called without arguments.
   ///
   /// See [API Keys Overview](https://cloud.google.com/api-keys/docs/overview).
-  factory LanguageService.fromApiKey([String? apiKey]) =>
-      LanguageService(client: httpClientFromApiKey(apiKey, _apiKeys));
+  factory LanguageService.fromApiKey([String? apiKey]) => LanguageService(
+    credentials: ApiKeyCredentials.fromEnvironment(
+      apiKey: apiKey,
+      environmentVariables: _apiKeys,
+    ),
+  );
 
   /// Analyzes the sentiment of the provided text.
   ///

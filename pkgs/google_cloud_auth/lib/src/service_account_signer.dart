@@ -19,6 +19,8 @@ library;
 
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
+
 import 'credential_exception.dart';
 
 /// Interface for a service account signer.
@@ -30,10 +32,13 @@ abstract interface class ServiceAccountSigner {
   /// The email address of the service account associated with the signer.
   String get clientEmail;
 
-  /// Signs [message].
+  /// Signs [message], using [client] if remote signing is required.
+  ///
+  /// If [client] is provided, it must be unauthenticated and is not closed by
+  /// this method.
   ///
   /// Throws [SigningException] on failure.
-  Future<Uint8List> sign(List<int> message);
+  Future<Uint8List> sign(List<int> message, {http.Client? client});
 }
 
 /// Exception thrown when cryptographic signing fails.

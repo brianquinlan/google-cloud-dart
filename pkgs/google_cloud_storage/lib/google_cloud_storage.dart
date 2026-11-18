@@ -15,6 +15,8 @@
 /// Stores and retrieves potentially large, immutable data objects.
 library;
 
+export 'package:google_cloud_auth/google_cloud_auth.dart'
+    show CredentialException;
 export 'package:google_cloud_rpc/exceptions.dart';
 
 export 'src/bucket.dart' hide newBucket;

@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:http/http.dart' as http;
+import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:meta/meta.dart';
 
-/// The default HTTP client to use when no HTTP client is provided.
-///
-/// On the web, the [http.Client] will not provide credentials.
+/// The default [Credentials] to use on the VM (`null` selects
+/// [defaultCredentials] in [AuthClient]).
 @internal
-Future<http.Client> defaultHttpClient() => Future.value(http.Client());
+Credentials? get defaultStorageCredentials => null;

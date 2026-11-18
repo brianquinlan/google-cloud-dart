@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:http/http.dart' as http;
+import 'package:google_cloud_auth/google_cloud_auth.dart';
 import 'package:meta/meta.dart';
 
-/// The default HTTP client to use when no HTTP client is provided.
+/// The default [Credentials] to use on the web.
 ///
-/// Uses Application Default Credentials to authenticate.
+/// In the browser, `Storage` defaults to [NoCredentials] for anonymous access
+/// to public resources.
 @internal
-Future<http.Client> defaultHttpClient() =>
-    auth.clientViaApplicationDefaultCredentials(
-      scopes: [
-        'https://www.googleapis.com/auth/iam',
-        'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/devstorage.full_control',
-      ],
-    );
+Credentials? get defaultStorageCredentials => const NoCredentials();

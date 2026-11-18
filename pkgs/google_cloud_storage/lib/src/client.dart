@@ -27,8 +27,8 @@ import 'bucket_metadata_json.dart';
 import 'bucket_metadata_patch_builder.dart'
     show BucketMetadataPatchBuilderJsonEncodable;
 import 'common_json.dart';
-import 'default_http_client_web.dart'
-    if (dart.library.io) 'default_http_client_vm.dart';
+import 'default_credentials_web.dart'
+    if (dart.library.io) 'default_credentials_vm.dart';
 import 'default_project_id_web.dart'
     if (dart.library.io) 'default_project_id_vm.dart';
 import 'file_download.dart';
@@ -48,174 +48,6 @@ class _JsonEncodableWrapper implements JsonEncodable {
 
   @override
   Object? toJson() => json;
-}
-
-/// An [http.Client] that authenticates requests using [Credentials].
-///
-/// Before sending each request through [delegate], [CredClient] populates
-/// request headers from [Credentials.requestMetadata].
-///
-/// If a replayable request ([http.Request]) receives an HTTP `401` response or
-/// a `WWW-Authenticate: Bearer` challenge with `error="invalid_token"`,
-/// [CredClient] refreshes the credentials once (`forceRefresh: true`) and
-/// retries the request.
-///
-/// Closing this client also closes [delegate].
-class CredClient extends http.BaseClient {
-  static final _bearerPattern = RegExp(r'\bBearer\b', caseSensitive: false);
-  static final _errorParamPattern = RegExp(
-    r'\berror\s*=\s*"?([^",\s]+)"?',
-    caseSensitive: false,
-  );
-
-  final Credentials creds;
-  final http.Client delegate;
-  Future<Map<String, List<String>>>? _activeRefresh;
-
-  CredClient(this.creds, [http.Client? delegate])
-    : delegate = delegate ?? http.Client();
-
-  static void _applyMetadata(
-    Map<String, String> headers,
-    Map<String, List<String>> metadata,
-  ) {
-    for (final entry in metadata.entries) {
-      if (entry.value.isEmpty) continue;
-      if (entry.key.toLowerCase() == 'x-goog-user-project' &&
-          headers.containsKey('x-goog-user-project')) {
-        continue;
-      }
-      headers[entry.key] = entry.value.join(', ');
-    }
-  }
-
-  static String? _headerValue(Map<String, String> headers, String lowerKey) {
-    if (headers[lowerKey] case final value?) return value;
-    for (final entry in headers.entries) {
-      if (entry.key.toLowerCase() == lowerKey) return entry.value;
-    }
-    return null;
-  }
-
-  static bool _metadataEquals(
-    Map<String, List<String>> a,
-    Map<String, List<String>> b,
-  ) {
-    if (a.length != b.length) return false;
-    for (final entry in a.entries) {
-      final other = b[entry.key];
-      if (other == null || other.length != entry.value.length) return false;
-      for (var i = 0; i < other.length; i++) {
-        if (other[i] != entry.value[i]) return false;
-      }
-    }
-    return true;
-  }
-
-  static bool _shouldRefresh(http.BaseResponse response) {
-    if (_headerValue(response.headers, 'www-authenticate')
-        case final authHeader? when _bearerPattern.hasMatch(authHeader)) {
-      if (_errorParamPattern.firstMatch(authHeader)?.group(1)
-          case final errorCode?) {
-        return errorCode.toLowerCase() == 'invalid_token';
-      }
-    }
-    return response.statusCode == 401;
-  }
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    var aborted = false;
-    final abortTrigger = switch (request) {
-      http.Abortable(:final abortTrigger) => abortTrigger,
-      _ => null,
-    };
-    if (abortTrigger != null) {
-      unawaited(abortTrigger.whenComplete(() => aborted = true));
-    }
-
-    if (request is http.Request) {
-      final bodyBytes = request.bodyBytes;
-      request.finalize();
-
-      http.Request buildAttempt(Map<String, List<String>> metadata) {
-        final copy =
-            (abortTrigger != null
-                  ? http.AbortableRequest(
-                      request.method,
-                      request.url,
-                      abortTrigger: abortTrigger,
-                    )
-                  : http.Request(request.method, request.url))
-              ..persistentConnection = request.persistentConnection
-              ..followRedirects = request.followRedirects
-              ..maxRedirects = request.maxRedirects
-              ..headers.addAll(request.headers)
-              ..bodyBytes = bodyBytes;
-        _applyMetadata(copy.headers, metadata);
-        return copy;
-      }
-
-      final metadata = await creds.requestMetadata(uri: request.url);
-      if (aborted) throw http.RequestAbortedException(request.url);
-
-      final response = await delegate.send(buildAttempt(metadata));
-      if (!_shouldRefresh(response) || aborted) {
-        return response;
-      }
-
-      await response.stream.listen((_) {}).cancel().catchError((_) {});
-      // Reuse an in-flight or already-completed refresh from a sibling request
-      // instead of hammering the token endpoint on concurrent 401s.
-      var refreshedMetadata =
-          await (_activeRefresh ?? creds.requestMetadata(uri: request.url));
-      if (_metadataEquals(metadata, refreshedMetadata)) {
-        final refresh = _activeRefresh ??= creds
-            .requestMetadata(uri: request.url, forceRefresh: true)
-            .whenComplete(() => _activeRefresh = null);
-        refreshedMetadata = await refresh;
-      }
-      if (aborted) throw http.RequestAbortedException(request.url);
-      return delegate.send(buildAttempt(refreshedMetadata));
-    }
-
-    final bodyStream = request.finalize();
-    final Map<String, List<String>> metadata;
-    try {
-      metadata = await creds.requestMetadata(uri: request.url);
-      if (aborted) throw http.RequestAbortedException(request.url);
-    } catch (_) {
-      unawaited(bodyStream.listen((_) {}).cancel().catchError((_) {}));
-      rethrow;
-    }
-
-    final forwarded =
-        (abortTrigger != null
-              ? http.AbortableStreamedRequest(
-                  request.method,
-                  request.url,
-                  abortTrigger: abortTrigger,
-                )
-              : http.StreamedRequest(request.method, request.url))
-          ..contentLength = request.contentLength
-          ..persistentConnection = request.persistentConnection
-          ..followRedirects = request.followRedirects
-          ..maxRedirects = request.maxRedirects
-          ..headers.addAll(request.headers);
-    _applyMetadata(forwarded.headers, metadata);
-
-    bodyStream.listen(
-      forwarded.sink.add,
-      onError: forwarded.sink.addError,
-      onDone: forwarded.sink.close,
-      cancelOnError: true,
-    );
-
-    return delegate.send(forwarded);
-  }
-
-  @override
-  void close() => delegate.close();
 }
 
 /// API for storing and retrieving potentially large, immutable data objects.
@@ -244,23 +76,50 @@ final class Storage {
     return id;
   }
 
-  static FutureOr<http.Client> _calculateClient(
-    FutureOr<http.Client>? client,
-    FutureOr<Credentials>? credentials,
-    String? emulatorHost,
-  ) {
-    if (client != null && credentials is Future<Credentials>) {
-      credentials.ignore();
+  static FutureOr<http.Client> _calculateClient({
+    required FutureOr<Credentials>? credentials,
+    required FutureOr<http.Client>? client,
+    required FutureOr<http.Client> Function()? clientFactory,
+    required String? apiEndpoint,
+    required bool useAuthWithCustomEndpoint,
+    required String? emulatorHost,
+    required String universeDomain,
+  }) {
+    if (client != null) {
+      if (credentials != null || clientFactory != null) {
+        if (credentials is Future<Credentials>) {
+          credentials.ignore();
+        }
+        throw ArgumentError(
+          'Cannot provide both client and credentials or clientFactory.',
+        );
+      }
+      return client;
     }
-    return switch ((client, credentials, emulatorHost)) {
-      (final client?, _, _) => client,
-      (null, final Credentials creds, _) => CredClient(creds, http.Client()),
-      (null, final Future<Credentials> creds, _) => creds.then(
-        (c) => CredClient(c, http.Client()),
-      ),
-      (null, null, _?) => http.Client(),
-      (null, null, null) => defaultHttpClient(),
+
+    final effectiveCredentials = switch ((
+      credentials,
+      emulatorHost,
+      apiEndpoint != null && !useAuthWithCustomEndpoint,
+    )) {
+      (final creds?, _, false) => creds,
+      (final creds?, _, true) => () {
+        if (creds is Future<Credentials>) {
+          creds.ignore();
+        }
+        throw ArgumentError(
+          'Cannot provide credentials when useAuthWithCustomEndpoint is false.',
+        );
+      }(),
+      (null, _?, _) || (null, _, true) => const NoCredentials(),
+      (null, null, false) => defaultStorageCredentials,
     };
+
+    return AuthClient(
+      credentials: effectiveCredentials,
+      clientFactory: clientFactory,
+      universeDomain: universeDomain,
+    );
   }
 
   static Map<String, String> _headers(ServiceClient serviceClient) => {
@@ -284,6 +143,13 @@ final class Storage {
     final cached = _cachedServiceClient;
     if (cached != null) return cached;
 
+    if (_httpClient case final http.Client client) {
+      return _cachedServiceClient = ServiceClient(
+        client: client,
+        gcclVersion: packageVersion,
+      );
+    }
+
     Future<ServiceClient> newServiceClient() async => _cachedServiceClient ??=
         ServiceClient(client: await _httpClient, gcclVersion: packageVersion);
     return newServiceClient();
@@ -293,6 +159,7 @@ final class Storage {
     String? apiEndpoint,
     bool useAuthWithCustomEndpoint,
     String? emulatorHost,
+    String universeDomain,
   ) {
     if (apiEndpoint != null) {
       if (useAuthWithCustomEndpoint) return Uri.https(apiEndpoint);
@@ -306,7 +173,7 @@ final class Storage {
       return Uri.http(host);
     }
 
-    return Uri.https('storage.googleapis.com');
+    return Uri.https('storage.$universeDomain');
   }
 
   Storage._(this._projectId, this._baseUrl, this._httpClient);
@@ -318,8 +185,8 @@ final class Storage {
   /// [Google Cloud Storage][] service and use the project inferred from the
   /// environment.
   ///
-  /// In the browser, by default, the client will not use any credentials and
-  /// will not use a project.
+  /// In the browser, by default, the client will not use any credentials
+  /// ([NoCredentials]) and will not use a project.
   ///
   /// You can explicitly provide a project ID by passing [projectId]. The
   /// special constant [noProject] can be passed to indicate that there is no
@@ -327,11 +194,15 @@ final class Storage {
   /// project will fail with a [StateError].
   ///
   /// To use authentication other than the default application credentials, pass
-  /// [credentials] (from `package:google_cloud_auth`) or provide an
-  /// authenticated [client]. If [client] is provided, it is used directly
-  /// without applying [credentials] to HTTP requests. To disable authentication
-  /// (e.g. if you only wish to access public data), pass an unauthenticated
-  /// `http.Client()` as [client].
+  /// [credentials] (from `package:google_cloud_auth`). To disable
+  /// authentication (e.g. if you only wish to access public data), pass
+  /// [NoCredentials] as [credentials].
+  ///
+  /// To customize the underlying unauthenticated HTTP transport used for both
+  /// credential and API requests, pass [clientFactory].
+  ///
+  /// Alternatively, an already-authenticated [client] may be provided directly.
+  /// [client] cannot be combined with [credentials] or [clientFactory].
   ///
   /// To target an emulator, you can set the `'STORAGE_EMULATOR_HOST'`
   /// environment variable to the address at which your emulator is running.
@@ -356,16 +227,31 @@ final class Storage {
     String? projectId,
     String? apiEndpoint,
     bool useAuthWithCustomEndpoint = true,
-    FutureOr<http.Client>? client,
     FutureOr<Credentials>? credentials,
+    FutureOr<http.Client>? client,
+    FutureOr<http.Client> Function()? clientFactory,
+    String universeDomain = Credentials.defaultUniverseDomain,
   }) {
     // Ensure that the same value of `storageEmulatorHost` is used everywhere in
     // the constructor.
     final emulatorHost = storageEmulatorHost;
     return Storage._(
       _calculateProjectId(projectId, emulatorHost),
-      _calculateBaseUrl(apiEndpoint, useAuthWithCustomEndpoint, emulatorHost),
-      _calculateClient(client, credentials, emulatorHost),
+      _calculateBaseUrl(
+        apiEndpoint,
+        useAuthWithCustomEndpoint,
+        emulatorHost,
+        universeDomain,
+      ),
+      _calculateClient(
+        credentials: credentials,
+        client: client,
+        clientFactory: clientFactory,
+        apiEndpoint: apiEndpoint,
+        useAuthWithCustomEndpoint: useAuthWithCustomEndpoint,
+        emulatorHost: emulatorHost,
+        universeDomain: universeDomain,
+      ),
     );
   }
 

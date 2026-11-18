@@ -20,6 +20,7 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
 import 'package:webcrypto/webcrypto.dart';
 
 import 'credential_exception.dart';
@@ -178,7 +179,7 @@ final class ServiceAccountCredentials extends GoogleCredentials
   ///
   /// Throws [SigningException] on failure.
   @override
-  Future<Uint8List> sign(List<int> message) async {
+  Future<Uint8List> sign(List<int> message, {http.Client? client}) async {
     try {
       return await _privateKey.signBytes(message);
     } on Exception catch (e, stackTrace) {
@@ -191,7 +192,7 @@ final class ServiceAccountCredentials extends GoogleCredentials
   }
 
   @override
-  Future<String> accessToken({bool forceRefresh = false}) {
+  Future<String> accessToken(http.Client client, {bool forceRefresh = false}) {
     throw UnimplementedError(
       'TODO(https://github.com/googleapis/google-cloud-dart/issues/391)',
     );

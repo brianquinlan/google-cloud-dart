@@ -17,6 +17,8 @@
 /// - https://github.com/googleapis/google-auth-library-python/blob/main/google/auth/credentials.py
 library;
 
+import 'package:http/http.dart' as http;
+
 abstract base class Credentials {
   /// The default universe domain for Google Cloud services.
   static const defaultUniverseDomain = 'googleapis.com';
@@ -28,14 +30,19 @@ abstract base class Credentials {
 
   const Credentials({this.universeDomain = defaultUniverseDomain});
 
-  /// Get the current request metadata, refreshing tokens if required.
+  /// Get the current request metadata, refreshing tokens if required using
+  /// [client].
+  ///
+  /// [client] must be an unauthenticated [http.Client] and is not closed by
+  /// this method.
   ///
   /// This should be called by the transport layer on each request,
   /// and the data should be populated in headers or other context.
   ///
   /// If a quota project is associated with these credentials then
   /// "x-goog-user-project" will be set.
-  Future<Map<String, List<String>>> requestMetadata({
+  Future<Map<String, List<String>>> requestMetadata(
+    http.Client client, {
     Uri? uri,
     bool forceRefresh = false,
   });

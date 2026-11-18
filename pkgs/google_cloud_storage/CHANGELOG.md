@@ -30,8 +30,8 @@
 * Add `RetryRunner.isRetryable` and `RetryRunner.delays`.
 * Send `gcloud-dart/<version>` in the default `User-Agent` header on Dart VM
   requests for API usage attribution.
-* Add a `credentials` parameter to `Storage.new` and `CredClient` to support
-  authenticating with `package:google_cloud_auth` `Credentials`.
+* Add `credentials`, `clientFactory`, and `universeDomain` parameters to
+  `Storage.new` to support authenticating with `package:google_cloud_auth`.
 
 ## 0.6.4
 

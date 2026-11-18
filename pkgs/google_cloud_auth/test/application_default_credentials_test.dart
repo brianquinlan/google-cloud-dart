@@ -42,11 +42,11 @@ void main() {
   group('applicationDefaultCredentials', () {
     group('produces useable request metadata', tags: 'google-cloud', () {
       test('for HTTP', () async {
-        final credentials = await defaultCredentials();
-        final metadata = await credentials.requestMetadata();
-
         final client = http.Client();
         addTearDown(client.close);
+
+        final credentials = await defaultCredentials(client);
+        final metadata = await credentials.requestMetadata(client);
 
         final response = await client.get(
           Uri.https(
@@ -62,8 +62,11 @@ void main() {
       });
 
       test('for gRPC', () async {
-        final credentials = await defaultCredentials();
-        final metadata = await credentials.requestMetadata();
+        final httpClient = http.Client();
+        addTearDown(httpClient.close);
+
+        final credentials = await defaultCredentials(httpClient);
+        final metadata = await credentials.requestMetadata(httpClient);
 
         final channel = grpc.ClientChannel('pubsub.googleapis.com');
         addTearDown(channel.shutdown);
@@ -376,7 +379,7 @@ void main() {
         );
       });
 
-      test('uses clientFactory to get access tokens', () async {
+      test('uses client to get access tokens', () async {
         final userFile = File(
           '${tempDir.path}/application_default_credentials.json',
         );
@@ -394,13 +397,12 @@ void main() {
         });
 
         final credentials = await internalDefaultCredentials(
-          clientFactory: () => mockClient,
           readEnvironment: (String name) => null,
           wellKnownFilePath: userFile.path,
         );
 
         expect(
-          await (credentials as UserCredentials).accessToken(),
+          await (credentials as UserCredentials).accessToken(mockClient),
           'user-access-token',
         );
       });
@@ -434,13 +436,16 @@ void main() {
         'gets access token from the environment',
         tags: ['google-cloud'],
         () async {
-          final credentials = await defaultCredentials();
+          final client = http.Client();
+          addTearDown(client.close);
+
+          final credentials = await defaultCredentials(client);
           // TODO(https://github.com/dart-lang/test/issues/2576): Throw when
           // this is fixed.
           if (credentials is! UserCredentials) {
             return;
           }
-          expect(await credentials.accessToken(), isNotEmpty);
+          expect(await credentials.accessToken(client), isNotEmpty);
         },
       );
     });
@@ -470,7 +475,7 @@ void main() {
     );
 
     final credentials = await internalDefaultCredentials(
-      clientFactory: () => mockClient,
+      client: mockClient,
       readEnvironment: (String name) => null,
       wellKnownFilePath: '${tempDir.path}/non_existent.json',
     );
@@ -512,7 +517,7 @@ void main() {
     });
 
     final credentials = await internalDefaultCredentials(
-      clientFactory: () => mockClient,
+      client: mockClient,
       readEnvironment: (String name) => switch (name) {
         'GCE_METADATA_HOST' => 'custom-metadata-host',
         _ => null,
@@ -535,7 +540,7 @@ void main() {
 
     expect(
       () => internalDefaultCredentials(
-        clientFactory: () => mockClient,
+        client: mockClient,
         readEnvironment: (String name) => null,
         wellKnownFilePath: '${tempDir.path}/non_existent.json',
       ),
